@@ -183,6 +183,14 @@
           </div>
         </div>
         <div class="matches" id="matchList"></div>
+
+        <!-- Test poll -->
+        <div id="testPollSection" style="margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">🧪 Test your pipeline</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Fetch one real post from your first monitored subreddit and evaluate it against your themes — confirms the whole pipeline is working.</div>
+          <button class="btn btn-ghost" onclick="runTestPoll()" id="testPollBtn">↻ Run test</button>
+          <div id="testPollResult" style="margin-top:12px"></div>
+        </div>
       </div>
     </div>
 
@@ -567,36 +575,74 @@ async function scanBrands(){
 function setBrandFilter(f){brandFilter=f;renderBrandMentions();}
 function renderBrandMentions(){
   if(!brandMentions)return;
-  const mentions=brandMentions.mentions||[];
-  const warmLeads=mentions.filter(m=>m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor'));
-  const own=mentions.filter(m=>m.brandType==='own'),comp=mentions.filter(m=>m.brandType==='competitor');
+  const all=brandMentions.mentions||[];
+  const active=all.filter(m=>!m.dismissed);
+  const archived=all.filter(m=>m.dismissed);
+  const warmLeads=active.filter(m=>m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor'));
+  const own=active.filter(m=>m.brandType==='own'),comp=active.filter(m=>m.brandType==='competitor');
   const badge=document.getElementById('brandBadge');badge.style.display=warmLeads.length>0?'inline':'none';badge.textContent=warmLeads.length;
-  const filtered=mentions.filter(m=>brandFilter==='all'?true:brandFilter==='own'?m.brandType==='own':brandFilter==='competitor'?m.brandType==='competitor':brandFilter==='warm_lead'?(m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor')):m.sentiment===brandFilter);
+
+  const pool=brandFilter==='archived'?archived:active;
+  const filtered=pool.filter(m=>
+    brandFilter==='all'||brandFilter==='archived'?true:
+    brandFilter==='own'?m.brandType==='own':
+    brandFilter==='competitor'?m.brandType==='competitor':
+    brandFilter==='warm_lead'?(m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor')):
+    m.sentiment===brandFilter
+  );
+
   const fb=(val,label,count,col)=>`<button onclick="setBrandFilter('${val}')" style="padding:4px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid ${brandFilter===val?'var(--border2)':'var(--border)'};background:${brandFilter===val?'var(--surface2)':'transparent'};color:${brandFilter===val?(col||'var(--text)'):'var(--muted)'}">${label}${count!==undefined?` <span style="background:var(--surface2);border-radius:10px;padding:0 5px;font-size:10px">${count}</span>`:''}</button>`;
+
   document.getElementById('brandContent').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-      ${[['Total',mentions.length,'var(--text)'],['GCC',own.length,'var(--accent)'],['Competitors',comp.length,'var(--blue)'],['Warm leads',warmLeads.length,'var(--yellow)']].map(([l,v,c])=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:20px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${l}</div></div>`).join('')}
+      ${[['Active',active.length,'var(--text)'],['Your brand',own.length,'var(--accent)'],['Competitors',comp.length,'var(--blue)'],['Warm leads',warmLeads.length,'var(--yellow)']].map(([l,v,c])=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:20px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${l}</div></div>`).join('')}
     </div>
-    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Last scanned ${timeAgo(brandMentions.scannedAt)} · ${mentions.length} mentions found</div>
-    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">${fb('all','All',mentions.length)}${fb('own','👁 GCC',own.length,'var(--accent)')}${fb('competitor','⚔ Competitors',comp.length,'var(--blue)')}${fb('warm_lead','🔥 Warm leads',warmLeads.length,'var(--yellow)')}${fb('positive','👍 Positive')}${fb('neutral','○ Neutral')}${fb('comparison','⚖ Comparing')}</div>
-    <div style="display:flex;flex-direction:column;gap:10px">${filtered.length===0?`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No mentions matching this filter</div></div>`:filtered.map(m=>{
-      const sc=SENTIMENT_STYLE[m.sentiment]||SENTIMENT_STYLE.neutral,isWarm=m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor');
-      return `<div class="mention-card${isWarm?' warm':''}">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-          <span style="font-size:11px;font-family:var(--mono);color:${m.brandColor||'var(--muted)'};background:${m.brandColor||'#6b7080'}1a;border:1px solid ${m.brandColor||'#6b7080'}40;padding:2px 8px;border-radius:4px">${m.brandType==='own'?'👁 ':'⚔ '}${esc(m.brand)}</span>
-          <span style="font-size:11px;font-family:var(--mono);color:${sc.color};background:${sc.bg};padding:2px 8px;border-radius:4px">${sc.label}</span>
-          <span style="font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:2px 7px;border-radius:4px">r/${esc(m.subreddit)}</span>
-          <span style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--muted)">${esc(m.author)} · ${timeAgo(m.postedAt)}</span>
-        </div>
-        <div style="font-size:14px;font-weight:500;margin-bottom:5px;line-height:1.4">${esc(m.title)}</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:${m.context?'8px':'12px'}">${esc(m.summary)}</div>
-        ${m.context?`<div style="font-size:11px;color:var(--text);font-style:italic;border-left:2px solid var(--border2);padding-left:10px;margin-bottom:12px;line-height:1.6">"${esc(m.context)}"</div>`:''}
-        ${isWarm&&m.warmLeadReason?`<div style="font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.6">🔥 ${esc(m.warmLeadReason)}</div>`:''}
-        <div style="display:flex;gap:7px"><a href="${esc(m.url)}" target="_blank" rel="noopener"><button class="btn btn-primary">↗ View on Reddit</button></a><button class="btn btn-ghost" onclick="dismissMention('${m.id}')">✕ Dismiss</button></div>
-      </div>`;
-    }).join('')}</div>`;
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Last scanned ${timeAgo(brandMentions.scannedAt)} · ${active.length} active · ${archived.length} archived</div>
+    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
+      ${fb('all','All',active.length)}
+      ${fb('own','👁 Your brand',own.length,'var(--accent)')}
+      ${fb('competitor','⚔ Competitors',comp.length,'var(--blue)')}
+      ${fb('warm_lead','🔥 Warm leads',warmLeads.length,'var(--yellow)')}
+      ${fb('positive','👍 Positive')}
+      ${fb('neutral','○ Neutral')}
+      ${fb('comparison','⚖ Comparing')}
+      ${fb('archived','🗄 Archived',archived.length,'var(--muted)')}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">${filtered.length===0
+      ?`<div class="empty"><div class="empty-icon">${brandFilter==='archived'?'🗄':'🔍'}</div><div class="empty-title">${brandFilter==='archived'?'No archived mentions':'No mentions matching this filter'}</div>${brandFilter==='archived'?'<div class="empty-desc">Dismissed mentions will appear here so you can restore them if needed.</div>':''}</div>`
+      :filtered.map(m=>{
+        const sc=SENTIMENT_STYLE[m.sentiment]||SENTIMENT_STYLE.neutral,isWarm=m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor');
+        return `<div class="mention-card${isWarm&&!m.dismissed?' warm':''}" style="opacity:${m.dismissed?.7:1}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+            <span style="font-size:11px;font-family:var(--mono);color:${m.brandColor||'var(--muted)'};background:${m.brandColor||'#6b7080'}1a;border:1px solid ${m.brandColor||'#6b7080'}40;padding:2px 8px;border-radius:4px">${m.brandType==='own'?'👁 ':'⚔ '}${esc(m.brand)}</span>
+            <span style="font-size:11px;font-family:var(--mono);color:${sc.color};background:${sc.bg};padding:2px 8px;border-radius:4px">${sc.label}</span>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:2px 7px;border-radius:4px">r/${esc(m.subreddit)}</span>
+            ${m.dismissed?`<span style="font-size:10px;font-family:var(--mono);color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:2px 7px;border-radius:4px">🗄 Archived ${timeAgo(m.dismissedAt)}</span>`:''}
+            <span style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--muted)">${esc(m.author)} · ${timeAgo(m.postedAt)}</span>
+          </div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:5px;line-height:1.4">${esc(m.title)}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:${m.context?'8px':'12px'}">${esc(m.summary)}</div>
+          ${m.context?`<div style="font-size:11px;color:var(--text);font-style:italic;border-left:2px solid var(--border2);padding-left:10px;margin-bottom:12px;line-height:1.6">"${esc(m.context)}"</div>`:''}
+          ${isWarm&&m.warmLeadReason&&!m.dismissed?`<div style="font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.6">🔥 ${esc(m.warmLeadReason)}</div>`:''}
+          <div style="display:flex;gap:7px">
+            <a href="${esc(m.url)}" target="_blank" rel="noopener"><button class="btn btn-primary">↗ View on Reddit</button></a>
+            ${m.dismissed
+              ?`<button class="btn btn-ghost" onclick="restoreMention('${m.id}')">↑ Restore</button>`
+              :`<button class="btn btn-ghost" onclick="dismissMention('${m.id}')">🗄 Archive</button>`}
+          </div>
+        </div>`;
+      }).join('')}</div>`;
 }
-async function dismissMention(id){await api('/api/brand-mentions/'+id+'/dismiss','POST');if(brandMentions?.mentions){brandMentions.mentions=brandMentions.mentions.filter(m=>m.id!==id);renderBrandMentions();}}
+async function dismissMention(id){
+  await api('/api/brand-mentions/'+id+'/dismiss','POST');
+  if(brandMentions?.mentions){brandMentions.mentions=brandMentions.mentions.map(m=>m.id===id?{...m,dismissed:true,dismissedAt:new Date().toISOString()}:m);renderBrandMentions();}
+  toast('🗄 Archived — find it under the Archived filter');
+}
+async function restoreMention(id){
+  await api('/api/brand-mentions/'+id+'/restore','POST');
+  if(brandMentions?.mentions){brandMentions.mentions=brandMentions.mentions.map(m=>m.id===id?{...m,dismissed:false,dismissedAt:null}:m);renderBrandMentions();}
+  toast('↑ Restored to active mentions');
+}
 
 let gapsData=null;
 const GAP_TYPE={update:{label:'✏️ Update existing',color:'#4e9eff',bg:'rgba(78,158,255,.1)',border:'rgba(78,158,255,.25)'},new:{label:'✦ New content',color:'#a78bfa',bg:'rgba(167,139,250,.1)',border:'rgba(167,139,250,.25)'},glossary:{label:'📖 Glossary entry',color:'#f97316',bg:'rgba(249,115,22,.1)',border:'rgba(249,115,22,.25)'}};
@@ -665,6 +711,35 @@ function renderGaps(){
         </div>
       </div>`;
     }).join('')}</div>`;
+}
+
+async function runTestPoll(){
+  const btn=document.getElementById('testPollBtn'),res=document.getElementById('testPollResult');
+  btn.innerHTML='<span class="spin"></span> Fetching real post...';btn.disabled=true;
+  res.innerHTML='';
+  const r=await api('/api/test-poll','POST');
+  const d=await r.json();
+  if(!r.ok){
+    res.innerHTML=`<div style="background:rgba(255,69,69,.1);border:1px solid rgba(255,69,69,.3);border-radius:8px;padding:12px;font-size:12px;color:var(--red)">${esc(d.error)}</div>`;
+  } else {
+    const score=d.evaluation?.overallScore||0;
+    const scoreCol=score>=7?'var(--green)':score>=4?'var(--yellow)':'var(--muted)';
+    const matchedThemes=(d.evaluation?.themeScores||[]).filter(ts=>ts.matches).map(ts=>{const t=d.themes.find(t=>t.name===ts.themeId);return t?`<span style="font-size:10px;font-family:var(--mono);color:${t.color};background:${t.color}1a;border:1px solid ${t.color}40;padding:1px 6px;border-radius:4px">${esc(t.name)} ${ts.score}/10</span>`:''}).join(' ');
+    res.innerHTML=`
+      <div style="background:rgba(62,207,142,.06);border:1px solid rgba(62,207,142,.2);border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--green);margin-bottom:10px">✓ ${esc(d.message)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:2px 7px;border-radius:4px">r/${esc(d.subreddit)}</span>
+          <span style="font-size:11px;font-family:var(--mono);color:${scoreCol};background:${scoreCol}1a;padding:2px 7px;border-radius:4px;font-weight:600">${score}/10</span>
+          ${matchedThemes}
+        </div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:5px;line-height:1.4">${esc(d.title)}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px">${esc(d.evaluation?.summary||'')}</div>
+        <div style="font-size:11px;color:var(--blue);font-family:var(--mono);line-height:1.5">↳ ${esc(d.evaluation?.reason||'')}</div>
+        <a href="${esc(d.url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px"><button class="btn btn-ghost" style="font-size:11px">↗ View this post on Reddit</button></a>
+      </div>`;
+  }
+  btn.innerHTML='↻ Run test';btn.disabled=false;
 }
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
