@@ -488,7 +488,15 @@ async function runBrandScan() {
   if (!brandTerms.length) { console.log('No brand terms configured — skipping brand scan.'); return null; }
 
   console.log(`Running brand scan for ${brandTerms.length} terms...`);
-  const allMentions = [];
+
+  // Load existing mentions so we can merge rather than overwrite
+  const existing = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
+  const existingMentions = existing?.data?.value?.mentions || [];
+  const existingById = {};
+  existingMentions.forEach(m => { existingById[m.id] = m; });
+
+  const freshIds = new Set();
+  const freshMentions = [];
   const seenIds = new Set();
 
   for (const brand of brandTerms) {
@@ -496,11 +504,20 @@ async function runBrandScan() {
     for (const post of posts) {
       if (seenIds.has(post.id)) continue;
       seenIds.add(post.id);
+      const mentionId = `bm_${post.id}_${brand.term.replace(/\s/g,'_')}`;
+      freshIds.add(mentionId);
+
+      // If we already have this mention, keep it (preserving dismissed state etc.)
+      if (existingById[mentionId]) {
+        freshMentions.push(existingById[mentionId]);
+        continue;
+      }
+
       try {
         const analysis = await analyseBrandMention(post, brand.term, brand.type);
         if (!analysis.relevant) continue;
-        allMentions.push({
-          id: `bm_${post.id}_${brand.term.replace(/\s/g,'_')}`,
+        freshMentions.push({
+          id: mentionId,
           brand: brand.term,
           brandType: brand.type,
           brandColor: brand.color || '#6b7080',
@@ -523,9 +540,14 @@ async function runBrandScan() {
     await new Promise(r => setTimeout(r, 1000));
   }
 
-  const result = { mentions: allMentions, scannedAt: new Date().toISOString(), termCount: brandTerms.length };
+  // Also keep any existing dismissed mentions that didn't appear in this scan
+  // so the archive isn't wiped when a post drops off Reddit search results
+  const preservedDismissed = existingMentions.filter(m => m.dismissed && !freshIds.has(m.id));
+  const mergedMentions = [...freshMentions, ...preservedDismissed];
+
+  const result = { mentions: mergedMentions, scannedAt: new Date().toISOString(), termCount: brandTerms.length };
   await supabase.from('config').upsert({ key: 'brand_mentions', value: result }, { onConflict: 'key' });
-  console.log(`Brand scan complete — ${allMentions.length} relevant mentions found.`);
+  console.log(`Brand scan complete — ${freshMentions.length} active mentions, ${preservedDismissed.length} archived preserved.`);
   return result;
 }
 
@@ -546,7 +568,19 @@ app.post('/api/brand-mentions/scan', requireAuth, async (req, res) => {
 app.post('/api/brand-mentions/:id/dismiss', requireAuth, async (req, res) => {
   const { data: existing } = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
   if (!existing?.value) return res.status(404).json({ error: 'Not found' });
-  existing.value.mentions = existing.value.mentions.filter(m => m.id !== req.params.id);
+  existing.value.mentions = existing.value.mentions.map(m =>
+    m.id === req.params.id ? { ...m, dismissed: true, dismissedAt: new Date().toISOString() } : m
+  );
+  await supabase.from('config').upsert({ key: 'brand_mentions', value: existing.value }, { onConflict: 'key' });
+  res.json({ ok: true });
+});
+
+app.post('/api/brand-mentions/:id/restore', requireAuth, async (req, res) => {
+  const { data: existing } = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
+  if (!existing?.value) return res.status(404).json({ error: 'Not found' });
+  existing.value.mentions = existing.value.mentions.map(m =>
+    m.id === req.params.id ? { ...m, dismissed: false, dismissedAt: null } : m
+  );
   await supabase.from('config').upsert({ key: 'brand_mentions', value: existing.value }, { onConflict: 'key' });
   res.json({ ok: true });
 });
@@ -637,6 +671,33 @@ app.post('/api/content-gaps/:gapId/status', requireAuth, async (req, res) => {
 
 app.get('/api/status', requireAuth, (req, res) => res.json({ isPolling, lastPollTime, lastPollStats }));
 app.post('/api/poll', requireAuth, (req, res) => { runPoll(); res.json({ ok: true }); });
+
+// ─── Test poll — fetch one real post and evaluate it ─────────────────────────
+app.post('/api/test-poll', requireAuth, async (req, res) => {
+  const config = await getConfig();
+  const themes = (config.themes || []).filter(t => t.active);
+  if (!config.subreddits?.length) return res.status(400).json({ error: 'No subreddits configured yet.' });
+  if (!themes.length) return res.status(400).json({ error: 'No active intent themes configured yet.' });
+
+  const subreddit = config.subreddits[0];
+  try {
+    const posts = await fetchSubredditPosts(subreddit, 5);
+    if (!posts.length) return res.status(400).json({ error: `No posts found in r/${subreddit}.` });
+    const post = posts[0];
+    const evaluation = await evaluatePost(post, themes);
+    res.json({
+      subreddit: post.subreddit,
+      title: post.title,
+      url: post.url,
+      author: post.author,
+      evaluation,
+      themes: themes.map(t => ({ id: t.id, name: t.name, color: t.color })),
+      message: `Successfully fetched and evaluated a real post from r/${subreddit}. Your pipeline is working.`
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
