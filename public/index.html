@@ -21,8 +21,6 @@
     --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
   }
   body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
-
-  /* ─ Login ─ */
   #loginScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; }
   .login-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:40px; width:360px; }
   .login-logo { display:flex; align-items:center; gap:10px; font-weight:600; font-size:16px; margin-bottom:32px; }
@@ -32,12 +30,8 @@
   .login-input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:7px; color:var(--text); font-family:var(--sans); font-size:14px; padding:10px 12px; outline:none; transition:border-color .15s; }
   .login-input:focus { border-color:var(--accent); }
   .login-error { font-size:12px; color:var(--red); margin-bottom:10px; display:none; }
-
-  /* ─ App shell ─ */
-  #app { display:none; height:100vh; grid-template-columns:280px 1fr; grid-template-rows:52px 1fr; overflow:hidden; }
+  #app { display:none; height:100vh; grid-template-columns:200px 1fr; grid-template-rows:52px 1fr; overflow:hidden; }
   #app.visible { display:grid; }
-
-  /* ─ Header ─ */
   header { grid-column:1/-1; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:12px; }
   .logo { display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; }
   .header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
@@ -47,8 +41,6 @@
   .dot-active { background:var(--green); box-shadow:0 0 6px var(--green); }
   .dot-polling { background:var(--yellow); animation:blink 1s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-  /* ─ Buttons ─ */
   .btn { padding:6px 13px; border-radius:6px; font-family:var(--sans); font-size:12px; font-weight:500; cursor:pointer; border:none; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
   .btn-primary { background:var(--accent); color:#fff; }
   .btn-primary:hover { background:var(--accent2); }
@@ -57,66 +49,32 @@
   .btn-green { background:rgba(62,207,142,.15); color:var(--green); border:1px solid rgba(62,207,142,.3); }
   .btn-green:hover { background:rgba(62,207,142,.25); }
   .btn-purple { background:rgba(167,139,250,.15); color:var(--purple); border:1px solid rgba(167,139,250,.3); }
-  .btn-purple:hover { background:rgba(167,139,250,.25); }
   .btn:disabled { opacity:.4; cursor:not-allowed; }
   .btn-full { width:100%; justify-content:center; }
-
-  /* ─ Sidebar ─ */
-  aside { background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:0; }
-
-  /* ─ Nav tabs (sidebar) ─ */
-  .nav-tabs { display:flex; flex-direction:column; gap:2px; margin-bottom:20px; }
-  .nav-tab { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; color:var(--muted); border:none; background:transparent; text-align:left; transition:all .15s; }
+  aside { background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; padding:12px 10px; display:flex; flex-direction:column; gap:2px; }
+  .nav-tab { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; color:var(--muted); border:none; background:transparent; text-align:left; transition:all .15s; width:100%; font-family:var(--sans); }
   .nav-tab:hover { color:var(--text); background:var(--surface2); }
   .nav-tab.active { color:var(--text); background:var(--surface2); }
-  .nav-tab .tab-icon { font-size:15px; width:20px; text-align:center; }
+  .tab-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
   .nav-badge { margin-left:auto; font-size:10px; font-family:var(--mono); background:var(--accent); color:#fff; padding:1px 6px; border-radius:10px; }
-
-  .sidebar-divider { height:1px; background:var(--border); margin:16px 0; }
-  .section-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px; }
-  .field { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
-  .field-label { font-size:11px; color:var(--muted); }
-  input[type=text], textarea, select { background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--sans); font-size:12px; padding:7px 9px; width:100%; outline:none; transition:border-color .15s; }
-  input[type=text]:focus, textarea:focus, select:focus { border-color:var(--accent); }
-  textarea { resize:vertical; min-height:75px; line-height:1.5; }
-
-  .tag-wrapper { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:5px; display:flex; flex-wrap:wrap; gap:4px; cursor:text; transition:border-color .15s; min-height:34px; }
-  .tag-wrapper:focus-within { border-color:var(--accent); }
-  .tag { background:var(--surface2); border:1px solid var(--border2); border-radius:4px; padding:1px 7px; font-size:11px; font-family:var(--mono); display:flex; align-items:center; gap:3px; color:var(--text); }
-  .tag-x { cursor:pointer; color:var(--muted); font-size:13px; line-height:1; padding:0 1px; }
-  .tag-x:hover { color:var(--red); }
-  .tag-input { border:none; background:transparent; flex:1; min-width:70px; font-size:11px; color:var(--text); outline:none; padding:2px 3px; font-family:var(--sans); }
-  .score-row { display:flex; align-items:center; gap:8px; }
-  .score-row input[type=range] { flex:1; accent-color:var(--accent); }
-  .score-val { font-family:var(--mono); font-size:13px; color:var(--accent); min-width:16px; text-align:right; }
-  .hint { font-size:10px; color:var(--muted); }
-
-  /* ─ Main panels ─ */
   main { overflow-y:auto; }
-  .panel { display:none; padding:22px; height:100%; }
+  .panel { display:none; }
   .panel.active { display:block; }
-
+  .panel-inner { padding:22px; }
   .panel-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; gap:12px; }
   .panel-title { font-size:16px; font-weight:600; }
   .panel-sub { font-size:12px; color:var(--muted); margin-top:2px; }
-
-  /* ─ Filters ─ */
   .filters { display:flex; gap:6px; }
   .filter-btn { padding:4px 11px; border-radius:20px; font-size:11px; font-family:var(--mono); cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); transition:all .15s; }
   .filter-btn.active { background:var(--surface2); color:var(--text); border-color:var(--border2); }
-
-  /* ─ Match cards ─ */
   .matches { display:flex; flex-direction:column; gap:10px; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; transition:border-color .15s; animation:fadeIn .2s ease; }
-  .card.replied-card { border-color:rgba(62,207,142,.25); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; animation:fadeIn .2s ease; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
   .card-meta { display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
   .badge-sub { font-size:11px; font-family:var(--mono); color:var(--accent); background:rgba(255,69,0,.1); padding:2px 7px; border-radius:4px; }
   .badge-score { font-size:11px; font-family:var(--mono); padding:2px 7px; border-radius:4px; font-weight:500; }
   .score-high { background:rgba(62,207,142,.15); color:var(--green); }
   .score-mid { background:rgba(245,200,66,.15); color:var(--yellow); }
-  .badge-replied { font-size:10px; font-family:var(--mono); color:var(--green); background:rgba(62,207,142,.1); border:1px solid rgba(62,207,142,.25); padding:2px 8px; border-radius:4px; }
-  .badge-flair { font-size:11px; font-family:var(--mono); background:var(--surface2); border:1px solid var(--border2); padding:2px 7px; border-radius:4px; color:var(--muted); }
   .card-time { margin-left:auto; font-size:11px; font-family:var(--mono); color:var(--muted); }
   .card-title { font-size:14px; font-weight:500; margin-bottom:5px; line-height:1.4; }
   .card-summary { font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:7px; }
@@ -125,56 +83,56 @@
   .draft { margin-top:12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:13px; }
   .draft-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:8px; }
   .draft-body { font-size:12px; line-height:1.7; color:var(--text); white-space:pre-wrap; margin-bottom:10px; }
-  .draft-actions { display:flex; gap:7px; }
-
-  /* ─ Brand voice panel ─ */
-  .voice-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-  .voice-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; }
-  .voice-card-title { font-size:13px; font-weight:600; margin-bottom:4px; }
-  .voice-card-desc { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
-  .voice-preview { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:12px; font-size:12px; color:var(--muted); line-height:1.6; min-height:80px; }
-  .voice-preview.has-content { color:var(--text); }
-  .voice-status { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; font-size:12px; margin-bottom:16px; }
-  .url-list { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
-  .url-item { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; font-family:var(--mono); color:var(--text); }
+  .settings-section { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:14px; }
+  .settings-section-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .settings-section-title { font-size:14px; font-weight:600; }
+  .settings-section-body { padding:18px; }
+  .field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+  .field:last-child { margin-bottom:0; }
+  .field-label { font-size:12px; font-weight:500; color:var(--text); }
+  .field-hint { font-size:11px; color:var(--muted); }
+  input[type=text], input[type=password], textarea, select { background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--sans); font-size:12px; padding:7px 9px; width:100%; outline:none; transition:border-color .15s; }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus { border-color:var(--accent); }
+  textarea { resize:vertical; min-height:80px; line-height:1.5; }
+  .tag-wrapper { background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:5px; display:flex; flex-wrap:wrap; gap:4px; cursor:text; transition:border-color .15s; min-height:34px; }
+  .tag-wrapper:focus-within { border-color:var(--accent); }
+  .tag { background:var(--surface2); border:1px solid var(--border2); border-radius:4px; padding:1px 7px; font-size:11px; font-family:var(--mono); display:flex; align-items:center; gap:3px; color:var(--text); }
+  .tag-x { cursor:pointer; color:var(--muted); font-size:13px; line-height:1; }
+  .tag-x:hover { color:var(--red); }
+  .tag-input { border:none; background:transparent; flex:1; min-width:70px; font-size:11px; color:var(--text); outline:none; padding:2px 3px; font-family:var(--sans); }
+  .score-row { display:flex; align-items:center; gap:8px; }
+  .score-row input[type=range] { flex:1; accent-color:var(--accent); }
+  .score-val { font-family:var(--mono); font-size:13px; color:var(--accent); min-width:16px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .list-item { display:flex; align-items:flex-start; gap:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:7px; }
+  .list-item-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; margin-top:3px; cursor:pointer; transition:all .2s; }
+  .list-item-body { flex:1; min-width:0; }
+  .list-item-name { font-size:12px; font-weight:600; margin-bottom:3px; }
+  .list-item-desc { font-size:11px; color:var(--muted); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .icon-btn { background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:13px; padding:2px 4px; }
+  .icon-btn:hover { color:var(--text); }
+  .url-item { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:11px; font-family:var(--mono); color:var(--text); margin-bottom:5px; }
   .url-remove { margin-left:auto; cursor:pointer; color:var(--muted); font-size:14px; }
   .url-remove:hover { color:var(--red); }
   .url-add-row { display:flex; gap:8px; }
   .url-add-row input { flex:1; }
-
-  /* ─ Content gaps panel ─ */
-  .gaps-header-row { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
-  .gaps-meta { font-size:11px; color:var(--muted); font-family:var(--mono); }
-  .gaps-summary { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--purple); border-radius:0 8px 8px 0; padding:14px 16px; font-size:13px; line-height:1.6; color:var(--text); margin-bottom:20px; }
-  .gaps-section-title { font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
-  .gaps-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px; }
-  .gap-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:14px; }
-  .gap-card-title { font-size:13px; font-weight:500; margin-bottom:5px; line-height:1.4; }
-  .gap-card-sub { font-size:11px; color:var(--muted); line-height:1.5; margin-bottom:4px; }
-  .gap-card-angle { font-size:11px; color:var(--blue); font-family:var(--mono); }
-  .faq-item { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:14px; margin-bottom:8px; }
-  .faq-q { font-size:13px; font-weight:500; margin-bottom:6px; }
-  .faq-a { font-size:12px; color:var(--muted); line-height:1.6; }
-  .outline-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:16px; margin-bottom:10px; }
-  .outline-title { font-size:14px; font-weight:600; margin-bottom:4px; }
-  .outline-type { font-size:10px; font-family:var(--mono); color:var(--purple); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
-  .outline-sections { display:flex; flex-direction:column; gap:5px; }
-  .outline-section { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
-  .outline-num { font-family:var(--mono); font-size:10px; color:var(--border2); min-width:16px; }
-
-  /* ─ Empty states ─ */
+  .mention-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:10px; }
+  .mention-card.warm { border-color:rgba(245,200,66,.3); border-left:3px solid var(--yellow); }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:1000; display:flex; align-items:center; justify-content:center; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; width:460px; animation:fadeIn .15s ease; }
+  .modal-title { font-size:15px; font-weight:600; margin-bottom:18px; }
+  .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+  .type-toggle { display:flex; gap:8px; }
+  .type-btn { flex:1; padding:8px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:var(--sans); font-size:12px; cursor:pointer; transition:all .15s; }
+  .color-picker { display:flex; gap:8px; flex-wrap:wrap; }
+  .color-swatch { width:24px; height:24px; border-radius:6px; cursor:pointer; border:2px solid transparent; transition:border .1s; }
   .empty { text-align:center; padding:60px 20px; color:var(--muted); }
   .empty-icon { font-size:36px; margin-bottom:12px; }
   .empty-title { font-size:14px; font-weight:500; color:var(--text); margin-bottom:6px; }
   .empty-desc { font-size:12px; line-height:1.6; }
-
-  /* ─ Toast ─ */
   .toast { position:fixed; bottom:20px; right:20px; background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:10px 14px; font-size:12px; animation:fadeIn .2s ease; z-index:999; }
-
-  /* ─ Spinner ─ */
   .spin { display:inline-block; width:11px; height:11px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:rotate .6s linear infinite; }
   @keyframes rotate { to{transform:rotate(360deg)} }
-
   ::-webkit-scrollbar { width:5px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
@@ -182,7 +140,6 @@
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo"><div class="logo-icon">👁</div>Reddit Monitor</div>
@@ -195,11 +152,9 @@
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
-
   <header>
-    <div class="logo"><div class="logo-icon" style="width:28px;height:28px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">👁</div>Reddit Monitor</div>
+    <div class="logo"><div class="logo-icon" style="width:28px;height:28px;font-size:14px;">👁</div>Reddit Monitor</div>
     <div class="header-right">
       <div class="status-pill"><div class="dot dot-idle" id="statusDot"></div><span id="statusText">idle</span></div>
       <button class="btn btn-ghost" id="pollBtn" onclick="pollNow()">↻ Poll now</button>
@@ -208,1050 +163,516 @@
   </header>
 
   <aside>
-    <!-- Nav -->
-    <div class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('matches',this)">
-        <span class="tab-icon">📡</span> Flagged Posts
-        <span class="nav-badge" id="matchBadge" style="display:none">0</span>
-      </button>
-      <button class="nav-tab" onclick="switchTab('archive',this)">
-        <span class="tab-icon">🗄</span> Archive
-        <span class="nav-badge" id="archiveBadge" style="display:none;background:var(--surface2);color:var(--muted);border:1px solid var(--border)">0</span>
-      </button>
-      <button class="nav-tab" onclick="switchTab('analytics',this)">
-        <span class="tab-icon">📊</span> Analytics
-      </button>
-      <button class="nav-tab" onclick="switchTab('voice',this)">
-        <span class="tab-icon">🎙</span> Brand Voice
-      </button>
-      <button class="nav-tab" onclick="switchTab('gaps',this)">
-        <span class="tab-icon">💡</span> Content Gaps
-      </button>
-      <button class="nav-tab" onclick="switchTab('brands',this)">
-        <span class="tab-icon">👁</span> Brand Monitor
-        <span class="nav-badge" id="brandBadge" style="display:none;background:var(--yellow);color:#111">0</span>
-      </button>
-    </div>
-
-    <div class="sidebar-divider"></div>
-
-    <!-- Intent themes -->
-    <div class="section-label">Intent themes</div>
-    <div id="themeList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px"></div>
-    <button class="btn btn-ghost btn-full" onclick="openThemeModal(null)" style="border-style:dashed;margin-bottom:4px">+ Add theme</button>
-
-    <div class="sidebar-divider"></div>
-
-    <!-- Brand terms -->
-    <div class="section-label">Brands to monitor</div>
-    <div id="brandTermList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px"></div>
-    <button class="btn btn-ghost btn-full" onclick="openBrandModal(null)" style="border-style:dashed;margin-bottom:4px">+ Add brand</button>
-
-    <div class="sidebar-divider"></div>
-
-    <!-- Monitor config -->
-    <div class="section-label">Monitor</div>
-    <div class="field">
-      <div class="field-label">Subreddits</div>
-      <div class="tag-wrapper" onclick="document.getElementById('subIn').focus()" id="subTags">
-        <input id="subIn" class="tag-input" placeholder="e.g. roasting" onkeydown="tagKey(event,'subreddits')">
-      </div>
-    </div>
-    <div class="field">
-      <div class="field-label">Keywords (pre-filter)</div>
-      <div class="tag-wrapper" onclick="document.getElementById('kwIn').focus()" id="kwTags">
-        <input id="kwIn" class="tag-input" placeholder="e.g. green beans" onkeydown="tagKey(event,'keywords')">
-      </div>
-      <div class="hint">Post must match at least one</div>
-    </div>
-    <div class="field">
-      <div class="field-label">Min relevance score</div>
-      <div class="score-row">
-        <input type="range" min="1" max="10" value="7" id="scoreSlider" oninput="document.getElementById('scoreVal').textContent=this.value">
-        <span class="score-val" id="scoreVal">7</span>
-      </div>
-    </div>
-    <div class="field">
-      <div class="field-label">Poll interval</div>
-      <select id="intervalSel">
-        <option value="5">Every 5 min</option>
-        <option value="10">Every 10 min</option>
-        <option value="15" selected>Every 15 min</option>
-        <option value="30">Every 30 min</option>
-        <option value="60">Every hour</option>
-      </select>
-    </div>
-    <button class="btn btn-primary btn-full" onclick="saveConfig()" id="saveBtn" style="margin-top:4px">Save & apply</button>
+    <button class="nav-tab active" onclick="switchTab('matches',this)"><span class="tab-icon">📡</span>Flagged Posts<span class="nav-badge" id="matchBadge" style="display:none">0</span></button>
+    <button class="nav-tab" onclick="switchTab('archive',this)"><span class="tab-icon">🗄</span>Archive<span class="nav-badge" id="archiveBadge" style="display:none;background:var(--surface2);color:var(--muted);border:1px solid var(--border)">0</span></button>
+    <button class="nav-tab" onclick="switchTab('analytics',this)"><span class="tab-icon">📊</span>Analytics</button>
+    <button class="nav-tab" onclick="switchTab('brands',this)"><span class="tab-icon">👁</span>Brand Monitor<span class="nav-badge" id="brandBadge" style="display:none;background:var(--yellow);color:#111">0</span></button>
+    <button class="nav-tab" onclick="switchTab('gaps',this)"><span class="tab-icon">💡</span>Content Gaps</button>
+    <button class="nav-tab" onclick="switchTab('settings',this)"><span class="tab-icon">⚙</span>Settings</button>
   </aside>
 
-  <!-- Brand monitor modal -->
-  <div id="brandModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:420px;animation:fadeIn .15s ease">
-      <div style="font-size:15px;font-weight:600;margin-bottom:18px" id="brandModalTitle">Add brand to monitor</div>
-      <div class="field">
-        <div class="field-label">Brand name — exactly as people would write it on Reddit</div>
-        <input type="text" id="brandTermIn" placeholder="e.g. Small Batch Roasting">
-      </div>
-      <div class="field">
-        <div class="field-label">Type</div>
-        <div style="display:flex;gap:8px">
-          <button id="brandTypeOwn" onclick="selectBrandType('own')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--accent);background:rgba(255,69,0,.1);color:var(--accent);font-family:inherit;font-size:12px;cursor:pointer">👁 Own brand</button>
-          <button id="brandTypeComp" onclick="selectBrandType('competitor')" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer">⚔ Competitor</button>
-        </div>
-      </div>
-      <div class="field">
-        <div class="field-label">Colour tag</div>
-        <div id="brandColorPicker" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn btn-ghost" onclick="closeBrandModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveBrandTerm()">Save</button>
-      </div>
-    </div>
-  </div>
-  <div id="themeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:460px;animation:fadeIn .15s ease">
-      <div style="font-size:15px;font-weight:600;margin-bottom:18px" id="themeModalTitle">New intent theme</div>
-      <div class="field">
-        <div class="field-label">Theme name</div>
-        <input type="text" id="themeNameIn" placeholder="e.g. Green bean sourcing">
-      </div>
-      <div class="field">
-        <div class="field-label">Intent description — Claude evaluates each post against this</div>
-        <textarea id="themeDescIn" placeholder="Describe what kinds of posts you want to flag for this theme..." style="min-height:100px"></textarea>
-      </div>
-      <div class="field">
-        <div class="field-label">Tag colour</div>
-        <div id="themeColorPicker" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn btn-ghost" onclick="closeThemeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveTheme()">Save theme</button>
-      </div>
-    </div>
-  </div>
-
   <main>
-
-    <!-- MATCHES PANEL -->
     <div class="panel active" id="panel-matches">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Flagged Posts</div>
-          <div class="panel-sub" id="matchSub">—</div>
-        </div>
-        <div class="filters">
-          <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-          <button class="filter-btn" onclick="setFilter('pending',this)">Pending</button>
-          <button class="filter-btn" onclick="setFilter('replied',this)">Replied</button>
-        </div>
-      </div>
-      <div class="matches" id="matchList"></div>
-    </div>
-
-    <!-- BRAND VOICE PANEL -->
-    <div class="panel" id="panel-voice">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Brand Voice</div>
-          <div class="panel-sub">Tell Claude how GCC sounds — it'll use this when drafting replies.</div>
-        </div>
-      </div>
-
-      <div id="voiceStatus" class="voice-status" style="display:none">
-        <span style="color:var(--green)">✓</span>
-        <span id="voiceStatusText">Voice context ready</span>
-      </div>
-
-      <div class="voice-grid">
-        <div class="voice-card">
-          <div class="voice-card-title">Tone description</div>
-          <div class="voice-card-desc">Write a short guide for how GCC communicates — personality, values, what to avoid.</div>
-          <textarea id="voiceDesc" placeholder="e.g. We're direct and knowledgeable but never preachy. We talk to home roasters as equals — we assume they care about quality and want the honest story behind a coffee, not marketing fluff. We avoid jargon unless it's the good kind (processing methods, varietals). We're enthusiastic without being breathless." style="min-height:140px"></textarea>
-        </div>
-        <div class="voice-card">
-          <div class="voice-card-title">Fetch from website</div>
-          <div class="voice-card-desc">Add pages from your site — Claude will read the copy and extract your tone automatically.</div>
-          <div class="url-list" id="urlList"></div>
-          <div class="url-add-row">
-            <input type="text" id="urlInput" placeholder="https://greencoffeecollective.co.uk/pages/about" onkeydown="if(event.key==='Enter')addUrl()">
-            <button class="btn btn-ghost" onclick="addUrl()">+ Add</button>
+      <div class="panel-inner">
+        <div class="panel-header">
+          <div><div class="panel-title">Flagged Posts</div><div class="panel-sub" id="matchSub">—</div></div>
+          <div class="filters">
+            <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-btn" onclick="setFilter('pending',this)">Pending</button>
+            <button class="filter-btn" onclick="setFilter('replied',this)">Replied</button>
           </div>
         </div>
-      </div>
-
-      <div style="display:flex;gap:10px;margin-bottom:24px">
-        <button class="btn btn-primary" onclick="saveVoice()" id="saveVoiceBtn">Save & refresh voice</button>
-        <button class="btn btn-ghost" onclick="refreshVoice()" id="refreshVoiceBtn">↻ Re-fetch from URLs</button>
-      </div>
-
-      <div style="margin-bottom:8px">
-        <div class="section-label" style="margin-bottom:10px">What Claude understands about your voice</div>
-        <div class="voice-preview" id="voicePreview">Save your tone description or add a URL to generate a voice profile.</div>
+        <div class="matches" id="matchList"></div>
       </div>
     </div>
 
-    <!-- CONTENT GAPS PANEL -->
-    <div class="panel" id="panel-gaps">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Content Gaps</div>
-          <div class="panel-sub" id="gapsSub">Updates automatically after each poll — each gap is backed by Reddit evidence and checked against your site.</div>
-        </div>
-        <button class="btn btn-purple" onclick="analyseGaps()" id="analyseBtn">✦ Re-analyse now</button>
-      </div>
-      <div id="gapsContent">
-        <div class="empty">
-          <div class="empty-icon">💡</div>
-          <div class="empty-title">No analysis yet</div>
-          <div class="empty-desc">Once you have some flagged posts, analysis runs automatically after each poll.<br>Or click Re-analyse now to run it manually.</div>
-        </div>
+    <div class="panel" id="panel-archive">
+      <div class="panel-inner">
+        <div class="panel-header"><div><div class="panel-title">Archive</div><div class="panel-sub">All replied and dismissed posts.</div></div></div>
+        <div id="archiveList"><div class="empty"><div class="empty-icon">🗄</div><div class="empty-title">Archive is empty</div><div class="empty-desc">Replied and dismissed posts will appear here.</div></div></div>
       </div>
     </div>
 
-    <!-- BRAND MONITOR PANEL -->
+    <div class="panel" id="panel-analytics">
+      <div class="panel-inner">
+        <div class="panel-header"><div><div class="panel-title">Analytics</div><div class="panel-sub">Reply counts, engagement, and theme performance.</div></div></div>
+        <div id="analyticsContent"><div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No data yet</div><div class="empty-desc">Analytics will appear once you have some replied posts.</div></div></div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-brands">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Brand Monitor</div>
-          <div class="panel-sub">Mentions of GCC and competitors across Reddit — searched in real time.</div>
+      <div class="panel-inner">
+        <div class="panel-header">
+          <div><div class="panel-title">Brand Monitor</div><div class="panel-sub">Mentions of your brands and competitors across all of Reddit.</div></div>
+          <button class="btn btn-primary" onclick="scanBrands()" id="brandScanBtn">↻ Scan now</button>
         </div>
-        <button class="btn btn-primary" onclick="scanBrands()" id="brandScanBtn">↻ Scan now</button>
-      </div>
-      <div id="brandContent">
-        <div class="empty">
-          <div class="empty-icon">👁</div>
-          <div class="empty-title">No scan yet</div>
-          <div class="empty-desc">Click "Scan now" to search Reddit for brand mentions.<br>Scans also run automatically after each poll.</div>
-        </div>
+        <div id="brandContent"><div class="empty"><div class="empty-icon">👁</div><div class="empty-title">No scan yet</div><div class="empty-desc">Click "Scan now" to search Reddit for brand mentions.<br>Scans also run automatically after each poll.</div></div></div>
       </div>
     </div>
 
+    <div class="panel" id="panel-gaps">
+      <div class="panel-inner">
+        <div class="panel-header">
+          <div><div class="panel-title">Content Gaps</div><div class="panel-sub">Updates automatically after each poll — each gap is backed by Reddit evidence and checked against your site.</div></div>
+          <button class="btn btn-purple" onclick="analyseGaps()" id="analyseBtn">✦ Re-analyse now</button>
+        </div>
+        <div id="gapsContent"><div class="empty"><div class="empty-icon">💡</div><div class="empty-title">No analysis yet</div><div class="empty-desc">Once you have some flagged posts, analysis runs automatically after each poll.<br>Or click Re-analyse now to run it manually.</div></div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-settings">
+      <div class="panel-inner">
+        <div class="panel-header"><div><div class="panel-title">Settings</div><div class="panel-sub">Configure everything in one place — save when done.</div></div></div>
+
+        <div class="settings-section">
+          <div class="settings-section-header"><span>📡</span><span class="settings-section-title">Monitor</span></div>
+          <div class="settings-section-body">
+            <div class="field">
+              <div class="field-label">Subreddits</div>
+              <div class="field-hint">Posts from these subreddits will be evaluated against your intent themes.</div>
+              <div class="tag-wrapper" onclick="document.getElementById('subIn').focus()" id="subTags"><input id="subIn" class="tag-input" placeholder="e.g. roasting" onkeydown="tagKey(event,'subreddits')"></div>
+            </div>
+            <div class="field">
+              <div class="field-label">Keywords (pre-filter)</div>
+              <div class="field-hint">A post must match at least one keyword before Claude evaluates it. Leave empty to evaluate everything.</div>
+              <div class="tag-wrapper" onclick="document.getElementById('kwIn').focus()" id="kwTags"><input id="kwIn" class="tag-input" placeholder="e.g. green beans" onkeydown="tagKey(event,'keywords')"></div>
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <div class="field-label">Min relevance score</div>
+                <div class="score-row"><input type="range" min="1" max="10" value="7" id="scoreSlider" oninput="document.getElementById('scoreVal').textContent=this.value"><span class="score-val" id="scoreVal">7</span></div>
+              </div>
+              <div class="field">
+                <div class="field-label">Poll interval</div>
+                <select id="intervalSel">
+                  <option value="5">Every 5 min</option><option value="10">Every 10 min</option>
+                  <option value="15" selected>Every 15 min</option><option value="30">Every 30 min</option><option value="60">Every hour</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header"><span>🎯</span><span class="settings-section-title">Intent themes</span></div>
+          <div class="settings-section-body">
+            <div class="field-hint" style="margin-bottom:14px">Claude evaluates each flagged post against all active themes and tags it with the ones it matches. Click the dot to toggle a theme on/off.</div>
+            <div id="themeList"></div>
+            <button class="btn btn-ghost btn-full" onclick="openModal('theme',null)" style="border-style:dashed">+ Add theme</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header"><span>👁</span><span class="settings-section-title">Brands to monitor</span></div>
+          <div class="settings-section-body">
+            <div class="field-hint" style="margin-bottom:14px">Add your brand names and competitors. Reddit will be searched for these after each poll. Click the dot to toggle on/off.</div>
+            <div id="brandTermList"></div>
+            <button class="btn btn-ghost btn-full" onclick="openModal('brand',null)" style="border-style:dashed">+ Add brand</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header"><span>🎙</span><span class="settings-section-title">Brand voice</span></div>
+          <div class="settings-section-body">
+            <div class="field-hint" style="margin-bottom:14px">Claude uses this when drafting replies. Describe your tone and add site pages for automatic tone extraction.</div>
+            <div class="field">
+              <div class="field-label">Tone description</div>
+              <textarea id="voiceDesc" placeholder="e.g. We're direct and knowledgeable but never preachy. We talk to home roasters as equals..." style="min-height:100px"></textarea>
+            </div>
+            <div class="field">
+              <div class="field-label">Fetch tone from website</div>
+              <div class="field-hint">Claude will read these pages and extract your tone automatically.</div>
+              <div id="urlList"></div>
+              <div class="url-add-row" style="margin-top:6px">
+                <input type="text" id="urlInput" placeholder="https://yoursite.com/about" onkeydown="if(event.key==='Enter')addUrl()">
+                <button class="btn btn-ghost" onclick="addUrl()" style="white-space:nowrap">+ Add</button>
+              </div>
+            </div>
+            <div id="voiceStatus" style="display:none;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-bottom:12px">
+              <span style="color:var(--green)">✓</span><span id="voiceStatusText"></span>
+            </div>
+            <div class="field">
+              <div class="field-label">What Claude understands about your voice</div>
+              <div id="voicePreview" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6;min-height:60px">Save your tone description or add a URL to generate a voice profile.</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="saveVoice()" id="saveVoiceBtn">Save & refresh voice</button>
+              <button class="btn btn-ghost" onclick="refreshVoice()" id="refreshVoiceBtn">↻ Re-fetch from URLs</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header"><span>🌐</span><span class="settings-section-title">Site pages</span></div>
+          <div class="settings-section-body">
+            <div class="field-hint" style="margin-bottom:14px">Claude fetches these pages before generating content gaps — so it knows what's already covered and won't suggest things you've already written.</div>
+            <div id="siteUrlList"></div>
+            <div class="url-add-row" style="margin-top:6px">
+              <input type="text" id="siteUrlInput" placeholder="https://yoursite.com/faq" onkeydown="if(event.key==='Enter')addSiteUrl()">
+              <button class="btn btn-ghost" onclick="addSiteUrl()" style="white-space:nowrap">+ Add</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="saveConfig()" id="saveBtn" style="padding:12px;font-size:14px;font-weight:600">Save & apply</button>
+      </div>
+    </div>
   </main>
 </div>
 
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-let sessionToken = localStorage.getItem('rm_token') || null;
+const THEME_COLORS=['#ff4500','#4e9eff','#a78bfa','#3ecf8e','#f97316','#f5c842','#ec4899','#14b8a6'];
+let sessionToken=localStorage.getItem('rm_token')||null;
 
-async function doLogin() {
-  const pw = document.getElementById('pwInput').value;
-  const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw}) });
-  if (res.ok) {
-    const { token } = await res.json();
-    sessionToken = token;
-    localStorage.setItem('rm_token', token);
-    showApp();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
-  }
+async function doLogin(){
+  const pw=document.getElementById('pwInput').value;
+  const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+  if(res.ok){const{token}=await res.json();sessionToken=token;localStorage.setItem('rm_token',token);showApp();}
+  else document.getElementById('loginError').style.display='block';
+}
+async function doLogout(){await api('/api/logout','POST');sessionToken=null;localStorage.removeItem('rm_token');document.getElementById('app').classList.remove('visible');document.getElementById('loginScreen').style.display='flex';}
+function api(url,method='GET',body){return fetch(url,{method,headers:{'Content-Type':'application/json','x-session-token':sessionToken},body:body?JSON.stringify(body):undefined});}
+async function checkAuth(){const res=await api('/api/status');if(res.ok){showApp();return true;}return false;}
+function showApp(){document.getElementById('loginScreen').style.display='none';document.getElementById('app').classList.add('visible');init();}
+
+function switchTab(tab,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='gaps')loadGaps();if(tab==='brands')loadBrandMentions();
 }
 
-async function doLogout() {
-  await api('/api/logout','POST');
-  sessionToken = null;
-  localStorage.removeItem('rm_token');
-  document.getElementById('app').classList.remove('visible');
-  document.getElementById('loginScreen').style.display = 'flex';
+let cfg={subreddits:[],keywords:[],themes:[],brandTerms:[],pollIntervalMinutes:15,minRelevanceScore:7,brandVoiceDescription:'',brandVoiceUrls:[],brandVoiceCache:null,brandVoiceCachedAt:null,sitePageUrls:[]};
+const DEFAULT_BRANDS=[{id:'bt1',term:'Green Coffee Collective',type:'own',color:'#ff4500',active:true},{id:'bt2',term:'GCC',type:'own',color:'#ff4500',active:true},{id:'bt3',term:'Small Batch Roasting',type:'competitor',color:'#4e9eff',active:true},{id:'bt4',term:'Roast Rebels',type:'competitor',color:'#a78bfa',active:true}];
+
+async function loadConfig(){
+  const res=await api('/api/config');if(!res.ok)return;
+  cfg=await res.json();
+  if(!cfg.themes)cfg.themes=[];
+  if(!cfg.brandTerms||!cfg.brandTerms.length)cfg.brandTerms=DEFAULT_BRANDS;
+  if(!cfg.brandVoiceUrls)cfg.brandVoiceUrls=[];
+  if(!cfg.sitePageUrls)cfg.sitePageUrls=[];
+  renderTags('subreddits');renderTags('keywords');
+  document.getElementById('scoreSlider').value=cfg.minRelevanceScore||7;
+  document.getElementById('scoreVal').textContent=cfg.minRelevanceScore||7;
+  document.getElementById('intervalSel').value=cfg.pollIntervalMinutes||15;
+  document.getElementById('voiceDesc').value=cfg.brandVoiceDescription||'';
+  renderThemeList();renderBrandTermList();renderUrlList();renderSiteUrlList();renderVoicePreview();
 }
 
-function api(url, method='GET', body) {
-  return fetch(url, {
-    method, headers:{'Content-Type':'application/json','x-session-token':sessionToken},
-    body: body ? JSON.stringify(body) : undefined
-  });
-}
-
-async function checkAuth() {
-  const res = await api('/api/status');
-  if (res.ok) { showApp(); return true; }
-  return false;
-}
-
-function showApp() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('app').classList.add('visible');
-  init();
-}
-
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-let currentTab = 'matches';
-
-function switchTab(tab, el) {
-  currentTab = tab;
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(`panel-${tab}`).classList.add('active');
-  if (tab === 'gaps') loadGaps();
-  if (tab === 'brands') loadBrandMentions();
-}
-
-// ─── Config ───────────────────────────────────────────────────────────────────
-const THEME_COLORS = ['#ff4500','#4e9eff','#a78bfa','#3ecf8e','#f97316','#f5c842','#ec4899','#14b8a6'];
-let cfg = { subreddits:[], keywords:[], themes:[], pollIntervalMinutes:15, minRelevanceScore:7, brandVoiceDescription:'', brandVoiceUrls:[], brandVoiceCache:null, brandVoiceCachedAt:null, sitePageUrls:[] };
-
-async function loadConfig() {
-  const res = await api('/api/config');
-  if (!res.ok) return;
-  cfg = await res.json();
-  if (!cfg.themes) cfg.themes = [];
-  if (!cfg.brandTerms) cfg.brandTerms = [
-    { id:'bt1', term:'Green Coffee Collective', type:'own',        color:'#ff4500', active:true },
-    { id:'bt2', term:'GCC',                     type:'own',        color:'#ff4500', active:true },
-    { id:'bt3', term:'Small Batch Roasting',    type:'competitor', color:'#4e9eff', active:true },
-    { id:'bt4', term:'Roast Rebels',            type:'competitor', color:'#a78bfa', active:true },
-  ];
-  renderTags('subreddits');
-  renderTags('keywords');
-  document.getElementById('scoreSlider').value = cfg.minRelevanceScore || 7;
-  document.getElementById('scoreVal').textContent = cfg.minRelevanceScore || 7;
-  document.getElementById('intervalSel').value = cfg.pollIntervalMinutes || 15;
-  document.getElementById('voiceDesc').value = cfg.brandVoiceDescription || '';
-  renderThemes();
-  renderBrandTerms();
-  renderUrlList();
-  renderVoicePreview();
-}
-
-async function saveConfig() {
-  cfg.minRelevanceScore = +document.getElementById('scoreSlider').value;
-  cfg.pollIntervalMinutes = +document.getElementById('intervalSel').value;
-  const btn = document.getElementById('saveBtn');
-  btn.textContent = 'Saving...'; btn.disabled = true;
+async function saveConfig(){
+  cfg.minRelevanceScore=+document.getElementById('scoreSlider').value;
+  cfg.pollIntervalMinutes=+document.getElementById('intervalSel').value;
+  cfg.brandVoiceDescription=document.getElementById('voiceDesc').value.trim();
+  const btn=document.getElementById('saveBtn');
+  btn.innerHTML='<span class="spin"></span> Saving...';btn.disabled=true;
   await api('/api/config','POST',cfg);
-  btn.textContent = '✓ Saved!';
-  setTimeout(() => { btn.textContent = 'Save & apply'; btn.disabled = false; }, 2000);
-  pollNow();
+  btn.textContent='✓ Saved!';
+  setTimeout(()=>{btn.textContent='Save & apply';btn.disabled=false;},2000);
+  pollNow();toast('✓ Settings saved');
 }
 
-// ─── Theme management ─────────────────────────────────────────────────────────
-let editingThemeId = null;
-
-function renderThemes() {
-  const list = document.getElementById('themeList');
-  if (!cfg.themes?.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px 0">No themes yet — add one to start flagging posts.</div>';
-    return;
-  }
-  list.innerHTML = cfg.themes.map(t => `
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;opacity:${t.active?1:.5}">
-      <div style="display:flex;align-items:center;gap:7px">
-        <div onclick="toggleTheme('${t.id}')" style="width:8px;height:8px;border-radius:50%;background:${t.active?t.color:'var(--border2)'};cursor:pointer;flex-shrink:0;box-shadow:${t.active?`0 0 6px ${t.color}80`:'none'};transition:all .2s"></div>
-        <span style="font-size:12px;font-weight:500;flex:1;color:${t.active?'var(--text)':'var(--muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.name)}</span>
-        <button onclick="openThemeModal('${t.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px">✎</button>
-        <button onclick="deleteTheme('${t.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px">×</button>
-      </div>
-      <div style="font-size:10px;color:var(--muted);line-height:1.4;padding-left:15px;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(t.description)}</div>
-    </div>`).join('');
+function tagKey(e,field){
+  if(e.key==='Enter'||e.key===','){e.preventDefault();const val=e.target.value.replace(',','').trim().replace(/^r\//,'');if(val&&!cfg[field].includes(val))cfg[field].push(val);e.target.value='';renderTags(field);}
+  if(e.key==='Backspace'&&e.target.value===''&&cfg[field].length){cfg[field].pop();renderTags(field);}
+}
+function removeTag(field,val){cfg[field]=cfg[field].filter(v=>v!==val);renderTags(field);}
+function renderTags(field){
+  const w=document.getElementById(field==='subreddits'?'subTags':'kwTags'),iid=field==='subreddits'?'subIn':'kwIn';
+  w.innerHTML='';cfg[field].forEach(v=>{const s=document.createElement('span');s.className='tag';s.innerHTML=`${field==='subreddits'?'r/':''}${v}<span class="tag-x" onclick="removeTag('${field}','${v}')">×</span>`;w.appendChild(s);});
+  const inp=document.createElement('input');inp.id=iid;inp.className='tag-input';inp.placeholder=cfg[field].length===0?(field==='subreddits'?'e.g. roasting':'e.g. green beans'):'';inp.setAttribute('onkeydown',`tagKey(event,'${field}')`);w.appendChild(inp);
 }
 
-function openThemeModal(id) {
-  editingThemeId = id;
-  const modal = document.getElementById('themeModal');
-  const title = document.getElementById('themeModalTitle');
-  const nameIn = document.getElementById('themeNameIn');
-  const descIn = document.getElementById('themeDescIn');
-  // Build colour picker
-  document.getElementById('themeColorPicker').innerHTML = THEME_COLORS.map(c =>
-    `<div onclick="selectThemeColor('${c}')" id="cp-${c.slice(1)}" style="width:24px;height:24px;border-radius:6px;background:${c};cursor:pointer;border:2px solid transparent;transition:border .1s"></div>`
-  ).join('');
-  if (id) {
-    const t = cfg.themes.find(x => x.id === id);
-    title.textContent = 'Edit theme';
-    nameIn.value = t.name;
-    descIn.value = t.description;
-    selectThemeColor(t.color);
-  } else {
-    title.textContent = 'New intent theme';
-    nameIn.value = '';
-    descIn.value = '';
-    selectThemeColor(THEME_COLORS[0]);
-  }
-  modal.style.display = 'flex';
+function renderThemeList(){
+  const el=document.getElementById('themeList');
+  if(!cfg.themes.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">No themes yet — add one to start flagging posts.</div>';return;}
+  el.innerHTML=cfg.themes.map(t=>`<div class="list-item" style="opacity:${t.active?1:.5}">
+    <div class="list-item-dot" style="background:${t.active?t.color:'var(--border2)'};box-shadow:${t.active?`0 0 6px ${t.color}80`:'none'}" onclick="toggleTheme('${t.id}')"></div>
+    <div class="list-item-body"><div class="list-item-name" style="color:${t.active?'var(--text)':'var(--muted)'}">${esc(t.name)}</div><div class="list-item-desc">${esc(t.description)}</div></div>
+    <div style="display:flex;gap:3px"><button class="icon-btn" onclick="openModal('theme','${t.id}')">✎</button><button class="icon-btn" onclick="deleteTheme('${t.id}')">×</button></div>
+  </div>`).join('');
 }
+function toggleTheme(id){cfg.themes=cfg.themes.map(t=>t.id===id?{...t,active:!t.active}:t);renderThemeList();}
+function deleteTheme(id){cfg.themes=cfg.themes.filter(t=>t.id!==id);renderThemeList();toast('Theme removed');}
 
-function closeThemeModal() {
-  document.getElementById('themeModal').style.display = 'none';
-  editingThemeId = null;
+function renderBrandTermList(){
+  const el=document.getElementById('brandTermList');
+  if(!cfg.brandTerms.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">No brands added yet.</div>';return;}
+  el.innerHTML=cfg.brandTerms.map(b=>`<div class="list-item" style="opacity:${b.active!==false?1:.5}">
+    <div class="list-item-dot" style="background:${b.active!==false?b.color:'var(--border2)'}" onclick="toggleBrand('${b.id}')"></div>
+    <div class="list-item-body"><div style="display:flex;align-items:center;gap:7px"><span class="list-item-name" style="color:${b.active!==false?'var(--text)':'var(--muted)'}">${esc(b.term)}</span><span style="font-size:10px;font-family:var(--mono);color:${b.type==='own'?'var(--accent)':'var(--blue)'};background:${b.type==='own'?'rgba(255,69,0,.1)':'rgba(78,158,255,.1)'};padding:1px 6px;border-radius:3px">${b.type==='own'?'own':'rival'}</span></div></div>
+    <div style="display:flex;gap:3px"><button class="icon-btn" onclick="openModal('brand','${b.id}')">✎</button><button class="icon-btn" onclick="deleteBrand('${b.id}')">×</button></div>
+  </div>`).join('');
 }
+function toggleBrand(id){cfg.brandTerms=cfg.brandTerms.map(b=>b.id===id?{...b,active:b.active===false}:b);renderBrandTermList();}
+function deleteBrand(id){cfg.brandTerms=cfg.brandTerms.filter(b=>b.id!==id);renderBrandTermList();toast('Brand removed');}
 
-let selectedThemeColor = THEME_COLORS[0];
-function selectThemeColor(c) {
-  selectedThemeColor = c;
-  document.querySelectorAll('#themeColorPicker > div').forEach(el => el.style.border = '2px solid transparent');
-  const el = document.getElementById('cp-' + c.slice(1));
-  if (el) el.style.border = '2px solid white';
+function renderUrlList(){document.getElementById('urlList').innerHTML=(cfg.brandVoiceUrls||[]).map((u,i)=>`<div class="url-item"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u)}</span><span class="url-remove" onclick="removeUrl(${i})">×</span></div>`).join('');}
+function addUrl(){const inp=document.getElementById('urlInput');let url=inp.value.trim();if(!url)return;if(!url.startsWith('http'))url='https://'+url;if(!cfg.brandVoiceUrls.includes(url))cfg.brandVoiceUrls.push(url);inp.value='';renderUrlList();}
+function removeUrl(i){cfg.brandVoiceUrls.splice(i,1);renderUrlList();}
+function renderSiteUrlList(){document.getElementById('siteUrlList').innerHTML=(cfg.sitePageUrls||[]).map((u,i)=>`<div class="url-item"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u)}</span><span class="url-remove" onclick="removeSiteUrl(${i})">×</span></div>`).join('');}
+function addSiteUrl(){const inp=document.getElementById('siteUrlInput');let url=inp.value.trim();if(!url)return;if(!url.startsWith('http'))url='https://'+url;if(!cfg.sitePageUrls)cfg.sitePageUrls=[];if(!cfg.sitePageUrls.includes(url))cfg.sitePageUrls.push(url);inp.value='';renderSiteUrlList();}
+function removeSiteUrl(i){cfg.sitePageUrls.splice(i,1);renderSiteUrlList();}
+
+function renderVoicePreview(){
+  const p=document.getElementById('voicePreview'),s=document.getElementById('voiceStatus');
+  if(cfg.brandVoiceCache){p.textContent=cfg.brandVoiceCache;p.style.color='var(--text)';s.style.display='flex';document.getElementById('voiceStatusText').textContent=`Voice context last refreshed ${timeAgo(cfg.brandVoiceCachedAt)} — used when drafting all replies`;}
+  else{p.textContent='Save your tone description or add a URL to generate a voice profile.';p.style.color='var(--muted)';s.style.display='none';}
 }
-
-function saveTheme() {
-  const name = document.getElementById('themeNameIn').value.trim();
-  const desc = document.getElementById('themeDescIn').value.trim();
-  if (!name || !desc) { toast('Please fill in both name and description'); return; }
-  if (!cfg.themes) cfg.themes = [];
-  if (editingThemeId) {
-    cfg.themes = cfg.themes.map(t => t.id === editingThemeId ? { ...t, name, description: desc, color: selectedThemeColor } : t);
-    toast('✓ Theme updated');
-  } else {
-    cfg.themes.push({ id: 't' + Date.now(), name, description: desc, color: selectedThemeColor, active: true });
-    toast('✓ Theme created');
-  }
-  closeThemeModal();
-  renderThemes();
-}
-
-function toggleTheme(id) {
-  cfg.themes = cfg.themes.map(t => t.id === id ? { ...t, active: !t.active } : t);
-  renderThemes();
-}
-
-function deleteTheme(id) {
-  cfg.themes = cfg.themes.filter(t => t.id !== id);
-  renderThemes();
-  toast('Theme removed');
-}
-
-// ─── Brand term management ────────────────────────────────────────────────────
-let editingBrandId = null;
-let selectedBrandType = 'own';
-let selectedBrandColor = '#ff4500';
-
-function renderBrandTerms() {
-  const list = document.getElementById('brandTermList');
-  if (!cfg.brandTerms?.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px 0">No brands added yet.</div>';
-    return;
-  }
-  list.innerHTML = cfg.brandTerms.map(b => `
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;opacity:${b.active!==false?1:.5}">
-      <div style="display:flex;align-items:center;gap:7px">
-        <div onclick="toggleBrandTerm('${b.id}')" style="width:8px;height:8px;border-radius:50%;background:${b.active!==false?b.color:'var(--border2)'};cursor:pointer;flex-shrink:0;transition:all .2s"></div>
-        <span style="font-size:12px;font-weight:500;flex:1;color:${b.active!==false?'var(--text)':'var(--muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.term)}</span>
-        <span style="font-size:10px;font-family:var(--mono);color:${b.type==='own'?'var(--accent)':'var(--blue)'};background:${b.type==='own'?'rgba(255,69,0,.1)':'rgba(78,158,255,.1)'};padding:1px 6px;border-radius:3px">${b.type==='own'?'own':'rival'}</span>
-        <button onclick="openBrandModal('${b.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px">✎</button>
-        <button onclick="deleteBrandTerm('${b.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px">×</button>
-      </div>
-    </div>`).join('');
-}
-
-function openBrandModal(id) {
-  editingBrandId = id;
-  const modal = document.getElementById('brandModal');
-  document.getElementById('brandModalTitle').textContent = id ? 'Edit brand' : 'Add brand to monitor';
-  document.getElementById('brandColorPicker').innerHTML = THEME_COLORS.map(c =>
-    `<div onclick="selectBrandColor('${c}')" id="bcp-${c.slice(1)}" style="width:24px;height:24px;border-radius:6px;background:${c};cursor:pointer;border:2px solid transparent;transition:border .1s"></div>`
-  ).join('');
-  if (id) {
-    const b = cfg.brandTerms.find(x => x.id === id);
-    document.getElementById('brandTermIn').value = b.term;
-    selectBrandType(b.type);
-    selectBrandColor(b.color || '#ff4500');
-  } else {
-    document.getElementById('brandTermIn').value = '';
-    selectBrandType('own');
-    selectBrandColor('#ff4500');
-  }
-  modal.style.display = 'flex';
-}
-
-function closeBrandModal() {
-  document.getElementById('brandModal').style.display = 'none';
-  editingBrandId = null;
-}
-
-function selectBrandType(type) {
-  selectedBrandType = type;
-  const ownBtn = document.getElementById('brandTypeOwn');
-  const compBtn = document.getElementById('brandTypeComp');
-  if (!ownBtn || !compBtn) return;
-  if (type === 'own') {
-    ownBtn.style.cssText = 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--accent);background:rgba(255,69,0,.1);color:var(--accent);font-family:inherit;font-size:12px;cursor:pointer';
-    compBtn.style.cssText = 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer';
-  } else {
-    ownBtn.style.cssText = 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer';
-    compBtn.style.cssText = 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--blue);background:rgba(78,158,255,.1);color:var(--blue);font-family:inherit;font-size:12px;cursor:pointer';
-  }
-}
-
-function selectBrandColor(c) {
-  selectedBrandColor = c;
-  document.querySelectorAll('#brandColorPicker > div').forEach(el => el.style.border = '2px solid transparent');
-  const el = document.getElementById('bcp-' + c.slice(1));
-  if (el) el.style.border = '2px solid white';
-}
-
-function saveBrandTerm() {
-  const term = document.getElementById('brandTermIn').value.trim();
-  if (!term) { toast('Please enter a brand name'); return; }
-  if (!cfg.brandTerms) cfg.brandTerms = [];
-  if (editingBrandId) {
-    cfg.brandTerms = cfg.brandTerms.map(b => b.id === editingBrandId ? { ...b, term, type: selectedBrandType, color: selectedBrandColor } : b);
-    toast('✓ Brand updated');
-  } else {
-    cfg.brandTerms.push({ id: 'bt' + Date.now(), term, type: selectedBrandType, color: selectedBrandColor, active: true });
-    toast('✓ Brand added');
-  }
-  closeBrandModal();
-  renderBrandTerms();
-}
-
-function toggleBrandTerm(id) {
-  cfg.brandTerms = cfg.brandTerms.map(b => b.id === id ? { ...b, active: b.active === false ? true : false } : b);
-  renderBrandTerms();
-}
-
-function deleteBrandTerm(id) {
-  cfg.brandTerms = cfg.brandTerms.filter(b => b.id !== id);
-  renderBrandTerms();
-  toast('Brand removed');
-}
-
-// ─── Brand voice ──────────────────────────────────────────────────────────────
-function renderUrlList() {
-  const list = document.getElementById('urlList');
-  if (!cfg.brandVoiceUrls?.length) { list.innerHTML = ''; return; }
-  list.innerHTML = cfg.brandVoiceUrls.map((u,i) => `
-    <div class="url-item">
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u}</span>
-      <span class="url-remove" onclick="removeUrl(${i})">×</span>
-    </div>`).join('');
-}
-
-function addUrl() {
-  const input = document.getElementById('urlInput');
-  let url = input.value.trim();
-  if (!url) return;
-  if (!url.startsWith('http')) url = 'https://' + url;
-  if (!cfg.brandVoiceUrls) cfg.brandVoiceUrls = [];
-  if (!cfg.brandVoiceUrls.includes(url)) cfg.brandVoiceUrls.push(url);
-  input.value = '';
-  renderUrlList();
-}
-
-function removeUrl(i) {
-  cfg.brandVoiceUrls.splice(i, 1);
-  renderUrlList();
-}
-
-function renderVoicePreview() {
-  const preview = document.getElementById('voicePreview');
-  const status = document.getElementById('voiceStatus');
-  if (cfg.brandVoiceCache) {
-    preview.textContent = cfg.brandVoiceCache;
-    preview.classList.add('has-content');
-    status.style.display = 'flex';
-    const ago = cfg.brandVoiceCachedAt ? timeAgo(cfg.brandVoiceCachedAt) : 'unknown';
-    document.getElementById('voiceStatusText').textContent = `Voice context last refreshed ${ago} — used when drafting all replies`;
-  } else {
-    preview.textContent = 'Save your tone description or add a URL to generate a voice profile.';
-    preview.classList.remove('has-content');
-    status.style.display = 'none';
-  }
-}
-
-async function saveVoice() {
-  cfg.brandVoiceDescription = document.getElementById('voiceDesc').value.trim();
-  const btn = document.getElementById('saveVoiceBtn');
-  btn.innerHTML = '<span class="spin"></span> Fetching & analysing...'; btn.disabled = true;
+async function saveVoice(){
+  cfg.brandVoiceDescription=document.getElementById('voiceDesc').value.trim();
+  const btn=document.getElementById('saveVoiceBtn');btn.innerHTML='<span class="spin"></span> Fetching & analysing...';btn.disabled=true;
   await api('/api/config','POST',cfg);
-  const res = await api('/api/brand-voice/refresh','POST');
-  if (res.ok) {
-    const data = await res.json();
-    cfg.brandVoiceCache = data.voiceContext;
-    cfg.brandVoiceCachedAt = data.cachedAt;
-    renderVoicePreview();
-    toast('✓ Brand voice updated');
+  const res=await api('/api/brand-voice/refresh','POST');
+  if(res.ok){const d=await res.json();cfg.brandVoiceCache=d.voiceContext;cfg.brandVoiceCachedAt=d.cachedAt;renderVoicePreview();toast('✓ Brand voice updated');}
+  else toast('Error refreshing voice');
+  btn.innerHTML='Save & refresh voice';btn.disabled=false;
+}
+async function refreshVoice(){
+  const btn=document.getElementById('refreshVoiceBtn');btn.innerHTML='<span class="spin"></span> Fetching...';btn.disabled=true;
+  const res=await api('/api/brand-voice/refresh','POST');
+  if(res.ok){const d=await res.json();cfg.brandVoiceCache=d.voiceContext;cfg.brandVoiceCachedAt=d.cachedAt;renderVoicePreview();toast('✓ Voice refreshed');}
+  btn.innerHTML='↻ Re-fetch from URLs';btn.disabled=false;
+}
+
+let modalMode=null,modalColor=THEME_COLORS[0],modalBrandType='competitor';
+function openModal(type,id){
+  modalMode={type,id};
+  const existing=type==='theme'?(id?cfg.themes.find(t=>t.id===id):null):(id?cfg.brandTerms.find(b=>b.id===id):null);
+  modalColor=existing?.color||THEME_COLORS[type==='brand'?2:0];
+  modalBrandType=existing?.type||'competitor';
+  document.getElementById('modalTitle').textContent=type==='theme'?(id?'Edit theme':'New intent theme'):(id?'Edit brand':'Add brand to monitor');
+  const body=document.getElementById('modalBody');
+  if(type==='theme'){
+    body.innerHTML=`<div class="field"><div class="field-label">Theme name</div><input type="text" id="mName" value="${esc(existing?.name||'')}" placeholder="e.g. Green bean sourcing"></div>
+    <div class="field"><div class="field-label">Intent description</div><textarea id="mDesc" placeholder="Describe what kinds of posts to flag...">${esc(existing?.description||'')}</textarea></div>
+    <div class="field"><div class="field-label">Tag colour</div><div class="color-picker" id="mColors"></div></div>`;
   } else {
-    toast('Error refreshing voice — check server logs');
+    body.innerHTML=`<div class="field"><div class="field-label">Brand name — exactly as people write it on Reddit</div><input type="text" id="mName" value="${esc(existing?.term||'')}" placeholder="e.g. Small Batch Roasting"></div>
+    <div class="field"><div class="field-label">Type</div><div class="type-toggle"><button class="type-btn" id="btnOwn" onclick="setMBT('own')">👁 Own brand</button><button class="type-btn" id="btnComp" onclick="setMBT('competitor')">⚔ Competitor</button></div></div>
+    <div class="field"><div class="field-label">Colour tag</div><div class="color-picker" id="mColors"></div></div>`;
+    setTimeout(()=>setMBT(modalBrandType),0);
   }
-  btn.innerHTML = 'Save & refresh voice'; btn.disabled = false;
+  setTimeout(()=>{const cp=document.getElementById('mColors');if(cp)cp.innerHTML=THEME_COLORS.map(c=>`<div class="color-swatch" style="background:${c};border-color:${c===modalColor?'white':'transparent'}" onclick="selMC('${c}',this)"></div>`).join('');},0);
+  document.getElementById('modalOverlay').style.display='flex';
 }
-
-async function refreshVoice() {
-  const btn = document.getElementById('refreshVoiceBtn');
-  btn.innerHTML = '<span class="spin"></span> Fetching...'; btn.disabled = true;
-  const res = await api('/api/brand-voice/refresh','POST');
-  if (res.ok) {
-    const data = await res.json();
-    cfg.brandVoiceCache = data.voiceContext;
-    cfg.brandVoiceCachedAt = data.cachedAt;
-    renderVoicePreview();
-    toast('✓ Voice context refreshed from URLs');
+function closeModal(){document.getElementById('modalOverlay').style.display='none';modalMode=null;}
+function selMC(c,el){modalColor=c;document.querySelectorAll('.color-swatch').forEach(s=>s.style.borderColor='transparent');el.style.borderColor='white';}
+function setMBT(type){
+  modalBrandType=type;
+  const o=document.getElementById('btnOwn'),c=document.getElementById('btnComp');if(!o||!c)return;
+  if(type==='own'){o.style.cssText='flex:1;padding:8px;border-radius:6px;border:1px solid var(--accent);background:rgba(255,69,0,.1);color:var(--accent);font-family:var(--sans);font-size:12px;cursor:pointer';c.style.cssText='flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--sans);font-size:12px;cursor:pointer';}
+  else{c.style.cssText='flex:1;padding:8px;border-radius:6px;border:1px solid var(--blue);background:rgba(78,158,255,.1);color:var(--blue);font-family:var(--sans);font-size:12px;cursor:pointer';o.style.cssText='flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--sans);font-size:12px;cursor:pointer';}
+}
+function saveModal(){
+  const name=document.getElementById('mName')?.value.trim();if(!name){toast('Please fill in the name');return;}
+  if(modalMode.type==='theme'){
+    const desc=document.getElementById('mDesc')?.value.trim();if(!desc){toast('Please fill in the description');return;}
+    if(modalMode.id)cfg.themes=cfg.themes.map(t=>t.id===modalMode.id?{...t,name,description:desc,color:modalColor}:t);
+    else cfg.themes.push({id:'t'+Date.now(),name,description:desc,color:modalColor,active:true});
+    renderThemeList();toast(modalMode.id?'✓ Theme updated':'✓ Theme created');
   } else {
-    toast('Error re-fetching — check URLs are accessible');
+    if(modalMode.id)cfg.brandTerms=cfg.brandTerms.map(b=>b.id===modalMode.id?{...b,term:name,type:modalBrandType,color:modalColor}:b);
+    else cfg.brandTerms.push({id:'bt'+Date.now(),term:name,type:modalBrandType,color:modalColor,active:true});
+    renderBrandTermList();toast(modalMode.id?'✓ Brand updated':'✓ Brand added');
   }
-  btn.innerHTML = '↻ Re-fetch from URLs'; btn.disabled = false;
+  closeModal();
 }
 
-// ─── Tags ─────────────────────────────────────────────────────────────────────
-function tagKey(e, field) {
-  if (e.key==='Enter'||e.key===',') {
-    e.preventDefault();
-    const val = e.target.value.replace(',','').trim().replace(/^r\//,'');
-    if (val && !cfg[field].includes(val)) cfg[field].push(val);
-    e.target.value = '';
-    renderTags(field);
-  }
-  if (e.key==='Backspace'&&e.target.value===''&&cfg[field].length) {
-    cfg[field].pop(); renderTags(field);
-  }
+async function refreshStatus(){
+  const res=await api('/api/status');if(!res.ok)return;const s=await res.json();
+  const dot=document.getElementById('statusDot'),txt=document.getElementById('statusText');
+  if(s.isPolling){dot.className='dot dot-polling';txt.textContent='polling...';}
+  else if(s.lastPollTime){dot.className='dot dot-active';const ago=Math.round((Date.now()-new Date(s.lastPollTime))/60000);txt.textContent=ago<1?'polled just now':`polled ${ago}m ago`;}
+  else{dot.className='dot dot-idle';txt.textContent='idle';}
 }
-
-function removeTag(field,val) { cfg[field]=cfg[field].filter(v=>v!==val); renderTags(field); }
-
-function renderTags(field) {
-  const wrapper = document.getElementById(field==='subreddits'?'subTags':'kwTags');
-  const inputId = field==='subreddits'?'subIn':'kwIn';
-  wrapper.innerHTML = '';
-  cfg[field].forEach(v => {
-    const s = document.createElement('span'); s.className='tag';
-    s.innerHTML=`${field==='subreddits'?'r/':''}${v}<span class="tag-x" onclick="removeTag('${field}','${v}')">×</span>`;
-    wrapper.appendChild(s);
-  });
-  const inp = document.createElement('input');
-  inp.id=inputId; inp.className='tag-input';
-  inp.placeholder=cfg[field].length===0?(field==='subreddits'?'e.g. roasting':'e.g. green beans'):'';
-  inp.setAttribute('onkeydown',`tagKey(event,'${field}')`);
-  wrapper.appendChild(inp);
-}
-
-// ─── Status ───────────────────────────────────────────────────────────────────
-async function refreshStatus() {
-  const res = await api('/api/status');
-  if (!res.ok) return;
-  const s = await res.json();
-  const dot = document.getElementById('statusDot'), txt = document.getElementById('statusText');
-  if (s.isPolling) { dot.className='dot dot-polling'; txt.textContent='polling...'; }
-  else if (s.lastPollTime) {
-    dot.className='dot dot-active';
-    const ago = Math.round((Date.now()-new Date(s.lastPollTime))/60000);
-    txt.textContent = ago<1?'polled just now':`polled ${ago}m ago`;
-  } else { dot.className='dot dot-idle'; txt.textContent='idle'; }
-}
-
-async function pollNow() {
-  const btn=document.getElementById('pollBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Polling...';
+async function pollNow(){
+  const btn=document.getElementById('pollBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Polling...';
   await api('/api/poll','POST');
-  setTimeout(async()=>{ btn.disabled=false; btn.innerHTML='↻ Poll now'; await loadMatches(); },3000);
+  setTimeout(async()=>{btn.disabled=false;btn.innerHTML='↻ Poll now';await loadMatches();},3000);
 }
 
-// ─── Matches ──────────────────────────────────────────────────────────────────
-let allMatches=[], currentFilter='all';
-
-async function loadMatches() {
-  const res = await api('/api/matches');
-  if (!res.ok) return;
-  allMatches = await res.json();
-  renderMatches();
-  const pending = allMatches.filter(m=>!m.replied).length;
-  const badge = document.getElementById('matchBadge');
-  badge.style.display = pending>0?'inline':'none';
-  badge.textContent = pending;
+let allMatches=[],currentFilter='all';
+async function loadMatches(){
+  const res=await api('/api/matches');if(!res.ok)return;allMatches=await res.json();renderMatches();
+  const pending=allMatches.filter(m=>!m.replied).length;
+  const badge=document.getElementById('matchBadge');badge.style.display=pending>0?'inline':'none';badge.textContent=pending;
 }
-
-function setFilter(f,el) {
-  currentFilter=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  renderMatches();
-}
-
-function renderMatches() {
-  const filtered = allMatches.filter(m=>currentFilter==='replied'?m.replied:currentFilter==='pending'?!m.replied:true);
-  const total=allMatches.length, replied=allMatches.filter(m=>m.replied).length;
+function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderMatches();}
+function renderMatches(){
+  const filtered=allMatches.filter(m=>currentFilter==='replied'?m.replied:currentFilter==='pending'?!m.replied:true);
+  const total=allMatches.length,replied=allMatches.filter(m=>m.replied).length;
   document.getElementById('matchSub').textContent=`${total} match${total!==1?'es':''} · ${replied} replied · ${total-replied} pending`;
   const list=document.getElementById('matchList');
-  if (!filtered.length) {
-    list.innerHTML=`<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">${currentFilter==='all'?'No matches yet':`No ${currentFilter} matches`}</div><div class="empty-desc">${currentFilter==='all'?'Save your config to start monitoring.':'Switch filter to see other matches.'}</div></div>`;
-    return;
-  }
-  list.innerHTML=filtered.map(cardHTML).join('');
+  if(!filtered.length){list.innerHTML=`<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">${currentFilter==='all'?'No matches yet':'No '+currentFilter+' matches'}</div><div class="empty-desc">${currentFilter==='all'?'Go to Settings to add your themes, then save to start monitoring.':'Switch filter to see other matches.'}</div></div>`;return;}
+  list.innerHTML=filtered.map(m=>{
+    const score=m.evaluation?.score||0,sc=score>=8?'score-high':'score-mid';
+    const themes=(m.evaluation?.matchedThemeIds||m.matched_themes||[]).map(id=>cfg.themes.find(t=>t.id===id)).filter(Boolean);
+    return `<div class="card" id="card-${m.id}">
+      <div class="card-meta">
+        <span class="badge-sub">r/${esc(m.subreddit)}</span>
+        <span class="badge-score ${sc}">${score}/10</span>
+        ${themes.map(t=>`<span style="font-size:10px;font-family:var(--mono);color:${t.color};background:${t.color}1a;border:1px solid ${t.color}40;padding:1px 7px;border-radius:4px">${esc(t.name)}</span>`).join('')}
+        ${m.flair?`<span style="font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;color:var(--muted)">${esc(m.flair)}</span>`:''}
+        ${m.replied?`<span style="font-size:10px;font-family:var(--mono);color:var(--green);background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.25);padding:2px 8px;border-radius:4px">✓ Replied</span>`:''}
+        <span class="card-time">${esc(m.author||'')} · ${timeAgo(m.matched_at)}</span>
+      </div>
+      <div class="card-title">${esc(m.title)}</div>
+      <div class="card-summary">${esc(m.evaluation?.summary||'')}</div>
+      <div class="card-reason">↳ ${esc(m.evaluation?.reason||'')}</div>
+      <div class="card-actions">
+        <a href="${esc(m.url)}" target="_blank" rel="noopener"><button class="btn btn-primary">↗ Open on Reddit</button></a>
+        <button class="btn btn-ghost" onclick="getDraft('${m.id}')">✍ Draft reply</button>
+        ${m.replied?`<button class="btn btn-ghost" onclick="archiveMatch('${m.id}','unreplied')">↩ Mark unreplied</button>`:`<button class="btn btn-green" onclick="archiveMatch('${m.id}','replied')">✓ Mark replied & archive</button>`}
+        <button class="btn btn-ghost" onclick="archiveMatch('${m.id}','dismissed')" style="margin-left:auto">✕ Dismiss</button>
+      </div>
+      ${m.draft_reply?`<div class="draft" id="draft-${m.id}"><div class="draft-label">Draft reply — based on your brand voice</div><div class="draft-body">${esc(m.draft_reply)}</div><div style="display:flex;gap:7px"><button class="btn btn-ghost" onclick="copyDraft('${m.id}')">📋 Copy</button><button class="btn btn-ghost" onclick="getDraft('${m.id}')">↻ Regenerate</button></div></div>`:''}
+    </div>`;
+  }).join('');
+}
+async function getDraft(id){
+  const card=document.getElementById('card-'+id);document.getElementById('draft-'+id)?.remove();
+  const ph=document.createElement('div');ph.className='draft';ph.id='draft-'+id;ph.innerHTML='<div class="draft-label">Drafting reply using your brand voice...</div><span class="spin"></span>';card.appendChild(ph);
+  const res=await api('/api/matches/'+id+'/draft','POST');const d=await res.json();
+  const m=allMatches.find(m=>m.id===id);if(m)m.draft_reply=d.draft;
+  ph.outerHTML=`<div class="draft" id="draft-${id}"><div class="draft-label">Draft reply — based on your brand voice</div><div class="draft-body">${esc(d.draft)}</div><div style="display:flex;gap:7px"><button class="btn btn-ghost" onclick="copyDraft('${id}')">📋 Copy</button><button class="btn btn-ghost" onclick="getDraft('${id}')">↻ Regenerate</button></div></div>`;
+}
+function copyDraft(id){const m=allMatches.find(m=>m.id===id);if(m?.draft_reply){navigator.clipboard.writeText(m.draft_reply);toast('📋 Copied to clipboard');}}
+async function archiveMatch(id,reason){
+  if(reason==='replied'||reason==='dismissed'){await api('/api/matches/'+id+'/archive','POST',{reason});allMatches=allMatches.filter(m=>m.id!==id);}
+  else{await api('/api/matches/'+id+'/replied','POST',{replied:false});const m=allMatches.find(m=>m.id===id);if(m){m.replied=false;m.replied_at=null;}}
+  renderMatches();toast(reason==='replied'?'✓ Marked replied & archived':reason==='dismissed'?'Dismissed':'Marked unreplied');
 }
 
-function cardHTML(m) {
-  const score=m.evaluation?.score||0;
-  const sc=score>=8?'score-high':'score-mid';
-  return `
-  <div class="card ${m.replied?'replied-card':''}" id="card-${m.id}">
-    <div class="card-meta">
-      <span class="badge-sub">r/${m.subreddit}</span>
-      <span class="badge-score ${sc}">${score}/10</span>
-      ${m.flair?`<span class="badge-flair">${esc(m.flair)}</span>`:''}
-      ${m.replied?`<span class="badge-replied">✓ Replied${m.replied_at?' · '+timeAgo(m.replied_at):''}</span>`:''}
-      <span class="card-time">${esc(m.author||'')} · ${timeAgo(m.matched_at)}</span>
+const SENTIMENT_STYLE={positive:{label:'👍 Positive',color:'var(--green)',bg:'rgba(62,207,142,.1)'},neutral:{label:'○ Neutral',color:'var(--muted)',bg:'var(--surface2)'},negative:{label:'👎 Negative',color:'var(--red)',bg:'rgba(255,69,69,.1)'},comparison:{label:'⚖ Comparing',color:'var(--yellow)',bg:'rgba(245,200,66,.1)'},warm_lead:{label:'🔥 Warm lead',color:'var(--yellow)',bg:'rgba(245,200,66,.15)'}};
+let brandMentions=null,brandFilter='all';
+async function loadBrandMentions(){const res=await api('/api/brand-mentions');if(res.ok){brandMentions=await res.json();renderBrandMentions();}}
+async function scanBrands(){
+  const btn=document.getElementById('brandScanBtn');btn.innerHTML='<span class="spin"></span> Scanning...';btn.disabled=true;
+  document.getElementById('brandContent').innerHTML='<div class="empty"><div class="empty-icon">👁</div><div class="empty-title" style="margin-top:12px">Searching Reddit for brand mentions...</div><div class="empty-desc">This takes ~20 seconds.</div></div>';
+  const res=await api('/api/brand-mentions/scan','POST');
+  if(res.ok){brandMentions=await res.json();renderBrandMentions();toast('✓ Brand scan complete');}else{const e=await res.json();toast('Error: '+e.error);}
+  btn.innerHTML='↻ Scan now';btn.disabled=false;
+}
+function setBrandFilter(f){brandFilter=f;renderBrandMentions();}
+function renderBrandMentions(){
+  if(!brandMentions)return;
+  const mentions=brandMentions.mentions||[];
+  const warmLeads=mentions.filter(m=>m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor'));
+  const own=mentions.filter(m=>m.brandType==='own'),comp=mentions.filter(m=>m.brandType==='competitor');
+  const badge=document.getElementById('brandBadge');badge.style.display=warmLeads.length>0?'inline':'none';badge.textContent=warmLeads.length;
+  const filtered=mentions.filter(m=>brandFilter==='all'?true:brandFilter==='own'?m.brandType==='own':brandFilter==='competitor'?m.brandType==='competitor':brandFilter==='warm_lead'?(m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor')):m.sentiment===brandFilter);
+  const fb=(val,label,count,col)=>`<button onclick="setBrandFilter('${val}')" style="padding:4px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid ${brandFilter===val?'var(--border2)':'var(--border)'};background:${brandFilter===val?'var(--surface2)':'transparent'};color:${brandFilter===val?(col||'var(--text)'):'var(--muted)'}">${label}${count!==undefined?` <span style="background:var(--surface2);border-radius:10px;padding:0 5px;font-size:10px">${count}</span>`:''}</button>`;
+  document.getElementById('brandContent').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      ${[['Total',mentions.length,'var(--text)'],['GCC',own.length,'var(--accent)'],['Competitors',comp.length,'var(--blue)'],['Warm leads',warmLeads.length,'var(--yellow)']].map(([l,v,c])=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:20px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${l}</div></div>`).join('')}
     </div>
-    <div class="card-title">${esc(m.title)}</div>
-    <div class="card-summary">${esc(m.evaluation?.summary||'')}</div>
-    <div class="card-reason">↳ ${esc(m.evaluation?.reason||'')}</div>
-    <div class="card-actions">
-      <a href="${m.url}" target="_blank" rel="noopener"><button class="btn btn-primary">↗ Open on Reddit</button></a>
-      <button class="btn btn-ghost" onclick="getDraft('${m.id}')">✍ Draft reply</button>
-      ${m.replied
-        ?`<button class="btn btn-ghost" onclick="setReplied('${m.id}',false)">↩ Mark unreplied</button>`
-        :`<button class="btn btn-green" onclick="setReplied('${m.id}',true)">✓ Mark as replied</button>`}
-      <button class="btn btn-ghost" onclick="dismiss('${m.id}')" style="margin-left:auto">✕ Dismiss</button>
-    </div>
-    ${m.draft_reply?draftHTML(m.id,m.draft_reply):''}
-  </div>`;
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Last scanned ${timeAgo(brandMentions.scannedAt)} · ${mentions.length} mentions found</div>
+    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">${fb('all','All',mentions.length)}${fb('own','👁 GCC',own.length,'var(--accent)')}${fb('competitor','⚔ Competitors',comp.length,'var(--blue)')}${fb('warm_lead','🔥 Warm leads',warmLeads.length,'var(--yellow)')}${fb('positive','👍 Positive')}${fb('neutral','○ Neutral')}${fb('comparison','⚖ Comparing')}</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${filtered.length===0?`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No mentions matching this filter</div></div>`:filtered.map(m=>{
+      const sc=SENTIMENT_STYLE[m.sentiment]||SENTIMENT_STYLE.neutral,isWarm=m.sentiment==='warm_lead'||(m.sentiment==='negative'&&m.brandType==='competitor');
+      return `<div class="mention-card${isWarm?' warm':''}">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:11px;font-family:var(--mono);color:${m.brandColor||'var(--muted)'};background:${m.brandColor||'#6b7080'}1a;border:1px solid ${m.brandColor||'#6b7080'}40;padding:2px 8px;border-radius:4px">${m.brandType==='own'?'👁 ':'⚔ '}${esc(m.brand)}</span>
+          <span style="font-size:11px;font-family:var(--mono);color:${sc.color};background:${sc.bg};padding:2px 8px;border-radius:4px">${sc.label}</span>
+          <span style="font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:2px 7px;border-radius:4px">r/${esc(m.subreddit)}</span>
+          <span style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--muted)">${esc(m.author)} · ${timeAgo(m.postedAt)}</span>
+        </div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:5px;line-height:1.4">${esc(m.title)}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:${m.context?'8px':'12px'}">${esc(m.summary)}</div>
+        ${m.context?`<div style="font-size:11px;color:var(--text);font-style:italic;border-left:2px solid var(--border2);padding-left:10px;margin-bottom:12px;line-height:1.6">"${esc(m.context)}"</div>`:''}
+        ${isWarm&&m.warmLeadReason?`<div style="font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.6">🔥 ${esc(m.warmLeadReason)}</div>`:''}
+        <div style="display:flex;gap:7px"><a href="${esc(m.url)}" target="_blank" rel="noopener"><button class="btn btn-primary">↗ View on Reddit</button></a><button class="btn btn-ghost" onclick="dismissMention('${m.id}')">✕ Dismiss</button></div>
+      </div>`;
+    }).join('')}</div>`;
 }
+async function dismissMention(id){await api('/api/brand-mentions/'+id+'/dismiss','POST');if(brandMentions?.mentions){brandMentions.mentions=brandMentions.mentions.filter(m=>m.id!==id);renderBrandMentions();}}
 
-function draftHTML(id,text) {
-  return `<div class="draft" id="draft-${id}">
-    <div class="draft-label">Draft reply — based on your brand voice</div>
-    <div class="draft-body">${esc(text)}</div>
-    <div class="draft-actions">
-      <button class="btn btn-ghost" onclick="copyDraft('${id}')">📋 Copy</button>
-      <button class="btn btn-ghost" onclick="getDraft('${id}')">↻ Regenerate</button>
-    </div>
-  </div>`;
-}
-
-async function getDraft(id) {
-  const card=document.getElementById(`card-${id}`);
-  document.getElementById(`draft-${id}`)?.remove();
-  const ph=document.createElement('div'); ph.className='draft'; ph.id=`draft-${id}`;
-  ph.innerHTML='<div class="draft-label">Drafting reply using your brand voice...</div><span class="spin"></span>';
-  card.appendChild(ph);
-  const res=await api(`/api/matches/${id}/draft`,'POST');
-  const data=await res.json();
-  const m=allMatches.find(m=>m.id===id);
-  if(m) m.draft_reply=data.draft;
-  ph.outerHTML=draftHTML(id,data.draft);
-}
-
-function copyDraft(id) {
-  const m=allMatches.find(m=>m.id===id);
-  if(m?.draft_reply){ navigator.clipboard.writeText(m.draft_reply); toast('📋 Copied to clipboard'); }
-}
-
-async function setReplied(id,replied) {
-  await api(`/api/matches/${id}/replied`,'POST',{replied});
-  const m=allMatches.find(m=>m.id===id);
-  if(m){ m.replied=replied; m.replied_at=replied?new Date().toISOString():null; }
-  renderMatches();
-  toast(replied?'✓ Marked as replied':'Marked as unreplied');
-}
-
-async function dismiss(id) {
-  await api(`/api/matches/${id}/dismiss`,'POST');
-  allMatches=allMatches.filter(m=>m.id!==id);
-  renderMatches();
-}
-
-// ─── Content gaps ─────────────────────────────────────────────────────────────
 let gapsData=null;
-
 const GAP_TYPE={update:{label:'✏️ Update existing',color:'#4e9eff',bg:'rgba(78,158,255,.1)',border:'rgba(78,158,255,.25)'},new:{label:'✦ New content',color:'#a78bfa',bg:'rgba(167,139,250,.1)',border:'rgba(167,139,250,.25)'},glossary:{label:'📖 Glossary entry',color:'#f97316',bg:'rgba(249,115,22,.1)',border:'rgba(249,115,22,.25)'}};
 const GAP_STATUS={todo:{label:'To do',color:'#6b7080',bg:'#1e2026',border:'#2a2d35'},in_progress:{label:'In progress',color:'#f5c842',bg:'rgba(245,200,66,.1)',border:'rgba(245,200,66,.3)'},done:{label:'Done',color:'#3ecf8e',bg:'rgba(62,207,142,.1)',border:'rgba(62,207,142,.3)'},needs_update:{label:'Needs updating',color:'#ff4500',bg:'rgba(255,69,0,.1)',border:'rgba(255,69,0,.3)'}};
 const GAP_URGENCY={high:{label:'🔴 High priority',color:'#ff4545',bg:'rgba(255,69,69,.1)',border:'rgba(255,69,69,.3)'},medium:{label:'🟡 Worth doing',color:'#f5c842',bg:'rgba(245,200,66,.1)',border:'rgba(245,200,66,.3)'},low:{label:'⚪ Nice to have',color:'#6b7080',bg:'#1e2026',border:'#2a2d35'}};
-
-let gapFilter='all';
-let evidenceOpenId=null;
-let outlineOpenId=null;
-
-async function loadGaps() {
-  const res=await api('/api/content-gaps');
-  if(res.ok) { gapsData=await res.json(); renderGaps(); }
-}
-
-async function analyseGaps() {
-  const btn=document.getElementById('analyseBtn');
-  btn.innerHTML='<span class="spin"></span> Analysing...'; btn.disabled=true;
-  document.getElementById('gapsContent').innerHTML=`<div class="empty"><div class="empty-icon" style="animation:rotate 2s linear infinite;display:inline-block">✦</div><div class="empty-title" style="margin-top:12px">Fetching site pages + analysing posts...</div><div class="empty-desc">Checking what\'s already covered before suggesting anything new. ~30 seconds.</div></div>`;
+let gapFilter='all',evidenceOpenId=null,outlineOpenId=null;
+async function loadGaps(){const res=await api('/api/content-gaps');if(res.ok){gapsData=await res.json();renderGaps();}}
+async function analyseGaps(){
+  const btn=document.getElementById('analyseBtn');btn.innerHTML='<span class="spin"></span> Analysing...';btn.disabled=true;
+  document.getElementById('gapsContent').innerHTML='<div class="empty"><div class="empty-icon" style="animation:rotate 2s linear infinite;display:inline-block">✦</div><div class="empty-title" style="margin-top:12px">Fetching site pages + analysing posts...</div><div class="empty-desc">~30 seconds.</div></div>';
   const res=await api('/api/content-gaps/analyse','POST');
-  if(res.ok){ gapsData=await res.json(); renderGaps(); toast('✦ Content gap analysis complete'); }
-  else { const e=await res.json(); toast(`Error: ${e.error}`); document.getElementById('gapsContent').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Analysis failed</div><div class="empty-desc">${esc(e.error)}</div></div>`; }
-  btn.innerHTML='✦ Re-analyse now'; btn.disabled=false;
+  if(res.ok){gapsData=await res.json();renderGaps();toast('✦ Content gap analysis complete');}else{const e=await res.json();toast('Error: '+e.error);}
+  btn.innerHTML='✦ Re-analyse now';btn.disabled=false;
 }
-
-async function updateGapStatus(gapId, status) {
-  await api(`/api/content-gaps/${gapId}/status`,'POST',{status});
-  if(gapsData?.gaps) {
-    gapsData.gaps=gapsData.gaps.map(g=>g.id===gapId?{...g,status}:g);
-    renderGaps();
-  }
-  const labels={done:'✓ Marked as done',in_progress:'📝 In progress',todo:'Moved to To do',dismissed:'Dismissed'};
-  toast(labels[status]||'Updated');
+async function updateGapStatus(gapId,status){
+  await api('/api/content-gaps/'+gapId+'/status','POST',{status});
+  if(gapsData?.gaps){gapsData.gaps=gapsData.gaps.map(g=>g.id===gapId?{...g,status}:g);renderGaps();}
+  const labels={done:'✓ Marked as done',in_progress:'📝 In progress',todo:'Moved to To do',dismissed:'Dismissed'};toast(labels[status]||'Updated');
 }
-
-function setGapFilter(f){ gapFilter=f; renderGaps(); }
-
-function toggleEvidence(id){ evidenceOpenId=evidenceOpenId===id?null:id; renderGaps(); }
-function toggleOutline(id){ outlineOpenId=outlineOpenId===id?null:id; renderGaps(); }
-
-function renderGaps() {
-  if(!gapsData) return;
-  const g=gapsData;
-  const gaps=g.gaps||[];
-  const counts={
-    todo:gaps.filter(x=>x.status==='todo').length,
-    in_progress:gaps.filter(x=>x.status==='in_progress').length,
-    done:gaps.filter(x=>x.status==='done').length,
-    needs_update:gaps.filter(x=>x.status==='needs_update').length,
-    high:gaps.filter(x=>x.urgency==='high'&&x.status!=='dismissed').length,
-  };
-  const totalFreq=gaps.filter(x=>x.status!=='dismissed').reduce((s,x)=>s+(x.frequency||0),0);
+function setGapFilter(f){gapFilter=f;renderGaps();}
+function toggleEvidence(id){evidenceOpenId=evidenceOpenId===id?null:id;renderGaps();}
+function toggleOutline(id){outlineOpenId=outlineOpenId===id?null:id;renderGaps();}
+function renderGaps(){
+  if(!gapsData)return;
+  const gaps=gapsData.gaps||[];
+  const counts={todo:gaps.filter(x=>x.status==='todo').length,in_progress:gaps.filter(x=>x.status==='in_progress').length,done:gaps.filter(x=>x.status==='done').length,needs_update:gaps.filter(x=>x.status==='needs_update').length,high:gaps.filter(x=>x.urgency==='high'&&x.status!=='dismissed').length};
   const visible=gaps.filter(x=>x.status!=='dismissed'&&(gapFilter==='all'||x.type===gapFilter||x.status===gapFilter||x.urgency===gapFilter));
-
-  const filterBtn=(val,label,count,col)=>`<button onclick="setGapFilter('${val}')" style="padding:4px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid ${gapFilter===val?'var(--border2)':'var(--border)'};background:${gapFilter===val?'var(--surface2)':'transparent'};color:${gapFilter===val?(col||'var(--text)'):'var(--muted)'};">${label}${count!==undefined?` <span style="background:var(--surface2);border-radius:10px;padding:0 5px;font-size:10px">${count}</span>`:''}</button>`;
-
+  const fb=(val,label,count,col)=>`<button onclick="setGapFilter('${val}')" style="padding:4px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid ${gapFilter===val?'var(--border2)':'var(--border)'};background:${gapFilter===val?'var(--surface2)':'transparent'};color:${gapFilter===val?(col||'var(--text)'):'var(--muted)'};">${label}${count!==undefined?` <span style="background:var(--surface2);border-radius:10px;padding:0 5px;font-size:10px">${count}</span>`:''}</button>`;
   document.getElementById('gapsContent').innerHTML=`
-    <!-- How it works note -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start">
-      <span style="font-size:15px;flex-shrink:0">⚙️</span>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6">
-        <span style="color:var(--text);font-weight:500">How this works: </span>
-        After each poll, Claude fetches your registered site pages and checks what's already covered before suggesting gaps.
-        Gaps marked <span style="color:${GAP_STATUS.done.color};font-family:var(--mono)">Done</span> are monitored — if Reddit keeps asking, they re-surface as <span style="color:${GAP_STATUS.needs_update.color};font-family:var(--mono)">Needs updating</span>.
-        Gaps marked <span style="color:${GAP_STATUS.in_progress.color};font-family:var(--mono)">In progress</span> are never overwritten.
-      </div>
-    </div>
-
-    <!-- Stats -->
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
-      ${[['High priority',counts.high,'#ff4545','across subreddits'],['To do',counts.todo,'var(--muted)','not started'],['In progress',counts.in_progress,'var(--yellow)','being worked on'],['Done',counts.done,'var(--green)','published'],['Needs updating',counts.needs_update,'var(--accent)','done but still asked']].map(([l,v,c,s])=>`
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
-        <div style="font-size:18px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div>
-        <div style="font-size:11px;font-weight:500;color:var(--text);margin-top:1px">${l}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${s}</div>
-      </div>`).join('')}
-    </div>
-
-    <!-- Pattern summary -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:16px;color:var(--text)">
-      <span style="color:var(--purple);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Pattern summary · based on ${g.postCount||0} posts · ${g.sitePagesFetched||0} site pages checked · ${timeAgo(g.generatedAt)}</span>
-      ${esc(g.summary||'')}
-    </div>
-
-    <!-- Filters -->
-    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
-      ${filterBtn('all','All')}
-      ${filterBtn('needs_update','⚠️ Needs updating',counts.needs_update,'var(--accent)')}
-      ${filterBtn('high','🔴 High priority',counts.high,'#ff4545')}
-      ${filterBtn('todo','To do',counts.todo)}
-      ${filterBtn('in_progress','In progress',counts.in_progress)}
-      ${filterBtn('done','Done',counts.done)}
-      ${filterBtn('update','✏️ Updates')}
-      ${filterBtn('new','✦ New')}
-      ${filterBtn('glossary','📖 Glossary')}
-    </div>
-
-    <!-- Gap cards -->
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${visible.length===0?`<div class="empty"><div class="empty-icon">💡</div><div class="empty-title">No gaps matching this filter</div></div>`
-      :visible.map(gap=>{
-        const tc=GAP_TYPE[gap.type]||GAP_TYPE.new;
-        const sc=GAP_STATUS[gap.status]||GAP_STATUS.todo;
-        const urg=GAP_URGENCY[gap.urgency]||GAP_URGENCY.medium;
-        const evidenceOpen=evidenceOpenId===gap.id;
-        const outlineOpen=outlineOpenId===gap.id;
-        const isDone=gap.status==='done';
-        const isUpdate=gap.status==='needs_update';
-        const subs=[...new Set((gap.evidence||[]).map(e=>e.subreddit))];
-        return `
-        <div style="background:var(--surface);border:1px solid ${isUpdate?'rgba(255,69,0,.3)':isDone?'rgba(62,207,142,.2)':gap.urgency==='high'?'rgba(255,69,69,.15)':'var(--border)'};border-radius:10px;overflow:hidden;opacity:${isDone&&!isUpdate?.78:1}">
-          ${isUpdate?'<div style="height:3px;background:linear-gradient(90deg,#ff4500,#ff6534)"></div>':(!isUpdate&&gap.urgency==='high'&&!isDone?'<div style="height:3px;background:linear-gradient(90deg,#ff4545,#ff4500)"></div>':'')}
-          <div style="padding:16px">
-            ${isUpdate&&gap.update_reason?`<div style="background:rgba(255,69,0,.08);border:1px solid rgba(255,69,0,.25);border-radius:7px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#ff8c69;line-height:1.6"><span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);display:block;margin-bottom:3px">⚠️ Content may need refreshing</span>${esc(gap.update_reason)}</div>`:''}
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-              <span style="font-size:11px;font-family:var(--mono);color:${tc.color};background:${tc.bg};border:1px solid ${tc.border};padding:2px 8px;border-radius:4px">${tc.label}</span>
-              <span style="font-size:11px;font-family:var(--mono);color:${sc.color};background:${sc.bg};border:1px solid ${sc.border};padding:2px 8px;border-radius:4px">● ${sc.label}</span>
-              <span style="font-size:11px;font-family:var(--mono);color:${urg.color};background:${urg.bg};border:1px solid ${urg.border};padding:2px 8px;border-radius:4px">${urg.label}</span>
-              ${gap.existingPage?`<span style="font-size:11px;font-family:var(--mono);color:var(--blue);background:rgba(78,158,255,.08);border:1px solid rgba(78,158,255,.2);padding:2px 8px;border-radius:4px">→ ${esc(gap.existingPage.title)}</span>`:''}
-              <span style="font-size:11px;font-family:var(--mono);color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:4px">${gap.frequency||0} posts · ${subs.map(s=>'r/'+s).join(', ')}</span>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:12px">
-              <div style="flex:1">
-                <div style="font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4;text-decoration:${isDone&&!isUpdate?'line-through':'none'};color:${isDone&&!isUpdate?'var(--muted)':'var(--text)'}">${esc(gap.title)}</div>
-                <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:7px">${esc(gap.rationale)}</div>
-                <div style="font-size:11px;color:var(--blue);font-family:var(--mono);margin-bottom:12px">→ ${esc(gap.angle)}</div>
-                <div>
-                  <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px">Recurring language from Reddit</div>
-                  <div style="display:flex;flex-wrap:wrap;gap:5px">
-                    ${(gap.recurringPhrases||[]).map(p=>`<span style="font-size:11px;font-family:var(--mono);color:var(--text2,#c8cad4);background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-style:italic">"${esc(p)}"</span>`).join('')}
-                  </div>
-                </div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-                ${Object.entries(GAP_STATUS).filter(([k])=>k!=='needs_update').map(([key,cfg])=>`
-                <button onclick="updateGapStatus('${gap.id}','${key}')" style="padding:3px 10px;border-radius:5px;border:1px solid ${gap.status===key?cfg.border:'var(--border)'};background:${gap.status===key?cfg.bg:'transparent'};color:${gap.status===key?cfg.color:'var(--muted)'};font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">
-                  ${gap.status===key?'● ':'○ '}${cfg.label}
-                </button>`).join('')}
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap">
-              <button onclick="toggleEvidence('${gap.id}')" style="font-size:11px;font-family:var(--mono);color:${evidenceOpen?'var(--text)':'var(--blue)'};background:${evidenceOpen?'var(--surface2)':'rgba(78,158,255,.08)'};border:1px solid ${evidenceOpen?'var(--border)':'rgba(78,158,255,.25)'};border-radius:5px;padding:4px 10px;cursor:pointer">
-                ${evidenceOpen?'▾':'▸'} ${(gap.evidence||[]).length} posts as evidence
-              </button>
-              <button onclick="toggleOutline('${gap.id}')" style="font-size:11px;font-family:var(--mono);color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:5px;padding:4px 10px;cursor:pointer">
-                ${outlineOpen?'▾ Hide outline':'▸ Show outline'}
-              </button>
-              <button onclick="updateGapStatus('${gap.id}','dismissed')" style="margin-left:auto;font-size:11px;color:var(--muted);background:transparent;border:none;cursor:pointer;font-family:var(--sans)">✕ Dismiss</button>
-            </div>
-            ${evidenceOpen?`
-            <div style="margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden">
-              <div style="padding:9px 14px;border-bottom:1px solid var(--border)"><span style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted)">${(gap.evidence||[]).length} Reddit posts that surfaced this gap</span></div>
-              ${(gap.evidence||[]).map((e,i)=>`
-              <div style="padding:12px 14px;border-bottom:${i<(gap.evidence.length-1)?'1px solid var(--surface2)':'none'}">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
-                  <span style="font-size:10px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:1px 6px;border-radius:3px">r/${esc(e.subreddit)}</span>
-                  <span style="font-size:10px;font-family:var(--mono);color:var(--purple);background:rgba(167,139,250,.1);padding:1px 6px;border-radius:3px">score ${e.score}/10</span>
-                  <span style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-left:auto">${esc(e.postedAgo||'')}</span>
-                </div>
-                <div style="font-size:12px;font-weight:500;color:var(--text2,#c8cad4);margin-bottom:5px;line-height:1.4">${esc(e.title)}</div>
-                <div style="font-size:11px;color:var(--muted);line-height:1.6;font-style:italic;border-left:2px solid var(--border2);padding-left:10px">"${esc(e.quote)}"</div>
-              </div>`).join('')}
-            </div>`:''}
-            ${outlineOpen?`
-            <div style="margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px">
-              <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px">Suggested sections</div>
-              ${(gap.sections||[]).map((s,i)=>`<div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--muted);margin-bottom:7px"><span style="font-family:var(--mono);font-size:10px;color:var(--border2);min-width:18px;margin-top:2px">${String(i+1).padStart(2,'0')}</span>${esc(s)}</div>`).join('')}
-            </div>`:''}
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:15px;flex-shrink:0">⚙️</span><div style="font-size:12px;color:var(--muted);line-height:1.6"><span style="color:var(--text);font-weight:500">How this works: </span>After each poll, Claude fetches your registered site pages and checks what's already covered before suggesting gaps. Gaps marked <span style="color:${GAP_STATUS.done.color};font-family:var(--mono)">Done</span> are monitored — if Reddit keeps asking, they re-surface as <span style="color:${GAP_STATUS.needs_update.color};font-family:var(--mono)">Needs updating</span>.</div></div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">${[['High priority',counts.high,'#ff4545'],['To do',counts.todo,'var(--muted)'],['In progress',counts.in_progress,'var(--yellow)'],['Done',counts.done,'var(--green)'],['Needs updating',counts.needs_update,'var(--accent)']].map(([l,v,c])=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="font-size:18px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;font-weight:500;color:var(--text);margin-top:1px">${l}</div></div>`).join('')}</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:16px;color:var(--text)"><span style="color:var(--purple);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Pattern summary · ${gapsData.postCount||0} posts · ${gapsData.sitePagesFetched||0} pages checked · ${timeAgo(gapsData.generatedAt)}</span>${esc(gapsData.summary||'')}</div>
+    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">${fb('all','All')}${fb('needs_update','⚠️ Needs updating',counts.needs_update,'var(--accent)')}${fb('high','🔴 High priority',counts.high,'#ff4545')}${fb('todo','To do',counts.todo)}${fb('in_progress','In progress',counts.in_progress)}${fb('done','Done',counts.done)}${fb('update','✏️ Updates')}${fb('new','✦ New')}${fb('glossary','📖 Glossary')}</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${visible.length===0?`<div class="empty"><div class="empty-icon">💡</div><div class="empty-title">No gaps matching this filter</div></div>`:visible.map(gap=>{
+      const tc=GAP_TYPE[gap.type]||GAP_TYPE.new,sc=GAP_STATUS[gap.status]||GAP_STATUS.todo,urg=GAP_URGENCY[gap.urgency]||GAP_URGENCY.medium;
+      const evidenceOpen=evidenceOpenId===gap.id,outlineOpen=outlineOpenId===gap.id,isDone=gap.status==='done',isUpdate=gap.status==='needs_update';
+      const subs=[...new Set((gap.evidence||[]).map(e=>e.subreddit))];
+      return `<div style="background:var(--surface);border:1px solid ${isUpdate?'rgba(255,69,0,.3)':isDone?'rgba(62,207,142,.2)':gap.urgency==='high'?'rgba(255,69,69,.15)':'var(--border)'};border-radius:10px;overflow:hidden;opacity:${isDone&&!isUpdate?.78:1}">
+        ${isUpdate?'<div style="height:3px;background:linear-gradient(90deg,#ff4500,#ff6534)"></div>':gap.urgency==='high'&&!isDone?'<div style="height:3px;background:linear-gradient(90deg,#ff4545,#ff4500)"></div>':''}
+        <div style="padding:16px">
+          ${isUpdate&&gap.update_reason?`<div style="background:rgba(255,69,0,.08);border:1px solid rgba(255,69,0,.25);border-radius:7px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#ff8c69;line-height:1.6"><span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:3px">⚠️ Content may need refreshing</span>${esc(gap.update_reason)}</div>`:''}
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+            <span style="font-size:11px;font-family:var(--mono);color:${tc.color};background:${tc.bg};border:1px solid ${tc.border};padding:2px 8px;border-radius:4px">${tc.label}</span>
+            <span style="font-size:11px;font-family:var(--mono);color:${sc.color};background:${sc.bg};border:1px solid ${sc.border};padding:2px 8px;border-radius:4px">● ${sc.label}</span>
+            <span style="font-size:11px;font-family:var(--mono);color:${urg.color};background:${urg.bg};border:1px solid ${urg.border};padding:2px 8px;border-radius:4px">${urg.label}</span>
+            ${gap.existingPage?`<span style="font-size:11px;font-family:var(--mono);color:var(--blue);background:rgba(78,158,255,.08);border:1px solid rgba(78,158,255,.2);padding:2px 8px;border-radius:4px">→ ${esc(gap.existingPage.title)}</span>`:''}
+            <span style="font-size:11px;font-family:var(--mono);color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:4px">${gap.frequency||0} posts · ${subs.map(s=>'r/'+s).join(', ')}</span>
           </div>
-        </div>`;
-      }).join('')}
-    </div>
-  `;
-}
-
-// ─── Brand Monitor ────────────────────────────────────────────────────────────
-const BRAND_CONFIG = {
-  'Green Coffee Collective': { type:'own', color:'var(--accent)', bg:'rgba(255,69,0,.1)' },
-  'GCC':                     { type:'own', color:'var(--accent)', bg:'rgba(255,69,0,.1)' },
-  'Small Batch Roasting':    { type:'competitor', color:'var(--blue)', bg:'rgba(78,158,255,.1)' },
-  'Roast Rebels':            { type:'competitor', color:'var(--purple)', bg:'rgba(167,139,250,.1)' },
-};
-
-const SENTIMENT_STYLE = {
-  positive:   { label:'👍 Positive',    color:'var(--green)',  bg:'rgba(62,207,142,.1)' },
-  neutral:    { label:'○ Neutral',     color:'var(--muted)',  bg:'var(--surface2)' },
-  negative:   { label:'👎 Negative',    color:'var(--red)',    bg:'rgba(255,69,69,.1)' },
-  comparison: { label:'⚖ Comparing',   color:'var(--yellow)', bg:'rgba(245,200,66,.1)' },
-  warm_lead:  { label:'🔥 Warm lead',   color:'var(--yellow)', bg:'rgba(245,200,66,.15)' },
-};
-
-let brandMentions = null;
-let brandFilter = 'all';
-
-async function loadBrandMentions() {
-  const res = await api('/api/brand-mentions');
-  if (res.ok) { brandMentions = await res.json(); renderBrandMentions(); }
-}
-
-async function scanBrands() {
-  const btn = document.getElementById('brandScanBtn');
-  btn.innerHTML = '<span class="spin"></span> Scanning...'; btn.disabled = true;
-  document.getElementById('brandContent').innerHTML = `<div class="empty"><div class="empty-icon" style="animation:rotate 2s linear infinite;display:inline-block">👁</div><div class="empty-title" style="margin-top:12px">Searching Reddit for brand mentions...</div><div class="empty-desc">Checking across all of Reddit. This takes ~20 seconds.</div></div>`;
-  const res = await api('/api/brand-mentions/scan', 'POST');
-  if (res.ok) { brandMentions = await res.json(); renderBrandMentions(); toast('✓ Brand scan complete'); }
-  else { const e = await res.json(); toast(`Error: ${e.error}`); }
-  btn.innerHTML = '↻ Scan now'; btn.disabled = false;
-}
-
-function setBrandFilter(f) { brandFilter = f; renderBrandMentions(); }
-
-function renderBrandMentions() {
-  if (!brandMentions) return;
-  const mentions = brandMentions.mentions || [];
-  const scannedAgo = brandMentions.scannedAt ? timeAgo(brandMentions.scannedAt) : 'unknown';
-
-  const warmLeads = mentions.filter(m => m.sentiment === 'warm_lead' || (m.sentiment === 'negative' && m.brandType === 'competitor'));
-  const badge = document.getElementById('brandBadge');
-  badge.style.display = warmLeads.length > 0 ? 'inline' : 'none';
-  badge.textContent = warmLeads.length;
-
-  const filtered = mentions.filter(m =>
-    brandFilter === 'all' ? true :
-    brandFilter === 'own' ? m.brandType === 'own' :
-    brandFilter === 'competitor' ? m.brandType === 'competitor' :
-    brandFilter === 'warm_lead' ? (m.sentiment === 'warm_lead' || (m.sentiment === 'negative' && m.brandType === 'competitor')) :
-    m.sentiment === brandFilter
-  );
-
-  // Group by brand
-  const brands = [...new Set(mentions.map(m => m.brand))];
-  const ownMentions = mentions.filter(m => m.brandType === 'own').length;
-  const compMentions = mentions.filter(m => m.brandType === 'competitor').length;
-
-  const filterBtn = (val, label, count) => `<button onclick="setBrandFilter('${val}')" style="padding:4px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid ${brandFilter===val?'var(--border2)':'var(--border)'};background:${brandFilter===val?'var(--surface2)':'transparent'};color:${brandFilter===val?'var(--text)':'var(--muted)'}">${label}${count!==undefined?` <span style="background:var(--surface2);border-radius:10px;padding:0 5px;font-size:10px">${count}</span>`:''}</button>`;
-
-  document.getElementById('brandContent').innerHTML = `
-    <!-- Stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-      ${[
-        ['Total mentions', mentions.length, 'var(--text)'],
-        ['GCC mentions', ownMentions, 'var(--accent)'],
-        ['Competitor mentions', compMentions, 'var(--blue)'],
-        ['Warm leads', warmLeads.length, 'var(--yellow)'],
-      ].map(([l,v,c]) => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:20px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${l}</div></div>`).join('')}
-    </div>
-
-    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Last scanned ${scannedAgo} · ${mentions.length} mentions found across Reddit</div>
-
-    <!-- Filters -->
-    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
-      ${filterBtn('all','All',mentions.length)}
-      ${filterBtn('own','👁 GCC',ownMentions)}
-      ${filterBtn('competitor','⚔ Competitors',compMentions)}
-      ${filterBtn('warm_lead','🔥 Warm leads',warmLeads.length)}
-      ${filterBtn('positive','👍 Positive')}
-      ${filterBtn('negative','👎 Negative')}
-      ${filterBtn('comparison','⚖ Comparing')}
-    </div>
-
-    <!-- Mention cards -->
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${filtered.length === 0
-        ? `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No mentions matching this filter</div></div>`
-        : filtered.map(m => {
-          const bc = { color: m.brandColor || '#6b7080', bg: `${m.brandColor || '#6b7080'}1a` };
-          const sc = SENTIMENT_STYLE[m.sentiment] || SENTIMENT_STYLE.neutral;
-          const isWarm = m.sentiment === 'warm_lead' || (m.sentiment === 'negative' && m.brandType === 'competitor');
-          return `
-          <div style="background:var(--surface);border:1px solid ${isWarm?'rgba(245,200,66,.3)':'var(--border)'};border-radius:10px;padding:16px;${isWarm?'border-left:3px solid var(--yellow)':''}">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-              <span style="font-size:11px;font-family:var(--mono);color:${bc.color};background:${bc.bg};padding:2px 8px;border-radius:4px;border:1px solid ${bc.color}40">${esc(m.brand)}</span>
-              <span style="font-size:11px;font-family:var(--mono);color:${sc.color};background:${sc.bg};padding:2px 8px;border-radius:4px">${sc.label}</span>
-              <span style="font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:2px 7px;border-radius:4px">r/${esc(m.subreddit)}</span>
-              <span style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--muted)">${esc(m.author)} · ${timeAgo(m.postedAt)}</span>
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4;text-decoration:${isDone&&!isUpdate?'line-through':'none'};color:${isDone&&!isUpdate?'var(--muted)':'var(--text)'}">${esc(gap.title)}</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:7px">${esc(gap.rationale)}</div>
+              <div style="font-size:11px;color:var(--blue);font-family:var(--mono);margin-bottom:12px">→ ${esc(gap.angle)}</div>
+              <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px">Recurring language from Reddit</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px">${(gap.recurringPhrases||[]).map(p=>`<span style="font-size:11px;font-family:var(--mono);color:#c8cad4;background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-style:italic">"${esc(p)}"</span>`).join('')}</div>
             </div>
-            <div style="font-size:14px;font-weight:500;margin-bottom:5px;line-height:1.4">${esc(m.title)}</div>
-            <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:${m.context?'8px':'12px'}">${esc(m.summary)}</div>
-            ${m.context ? `<div style="font-size:11px;color:var(--text);font-style:italic;border-left:2px solid var(--border2);padding-left:10px;margin-bottom:12px;line-height:1.6">"${esc(m.context)}"</div>` : ''}
-            ${isWarm ? `<div style="font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:6px;padding:7px 10px;margin-bottom:12px">🔥 ${esc(m.warmLeadReason||'This person may be open to switching suppliers.')}</div>` : ''}
-            <div style="display:flex;gap:7px">
-              <a href="${esc(m.url)}" target="_blank" rel="noopener"><button class="btn btn-primary">↗ View on Reddit</button></a>
-              <button class="btn btn-ghost" onclick="dismissBrandMention('${m.id}')">✕ Dismiss</button>
-            </div>
-          </div>`;
-        }).join('')}
-    </div>
-  `;
+            <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">${Object.entries(GAP_STATUS).filter(([k])=>k!=='needs_update').map(([key,gs])=>`<button onclick="updateGapStatus('${gap.id}','${key}')" style="padding:3px 10px;border-radius:5px;border:1px solid ${gap.status===key?gs.border:'var(--border)'};background:${gap.status===key?gs.bg:'transparent'};color:${gap.status===key?gs.color:'var(--muted)'};font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">${gap.status===key?'● ':'○ '}${gs.label}</button>`).join('')}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button onclick="toggleEvidence('${gap.id}')" style="font-size:11px;font-family:var(--mono);color:${evidenceOpen?'var(--text)':'var(--blue)'};background:${evidenceOpen?'var(--surface2)':'rgba(78,158,255,.08)'};border:1px solid ${evidenceOpen?'var(--border)':'rgba(78,158,255,.25)'};border-radius:5px;padding:4px 10px;cursor:pointer">${evidenceOpen?'▾':'▸'} ${(gap.evidence||[]).length} posts as evidence</button>
+            <button onclick="toggleOutline('${gap.id}')" style="font-size:11px;font-family:var(--mono);color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:5px;padding:4px 10px;cursor:pointer">${outlineOpen?'▾ Hide outline':'▸ Show outline'}</button>
+            <button onclick="updateGapStatus('${gap.id}','dismissed')" style="margin-left:auto;font-size:11px;color:var(--muted);background:transparent;border:none;cursor:pointer;font-family:var(--sans)">✕ Dismiss</button>
+          </div>
+          ${evidenceOpen?`<div style="margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden"><div style="padding:9px 14px;border-bottom:1px solid var(--border)"><span style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted)">${(gap.evidence||[]).length} posts that surfaced this gap</span></div>${(gap.evidence||[]).map((e,i)=>`<div style="padding:12px 14px;border-bottom:${i<gap.evidence.length-1?'1px solid var(--surface2)':'none'}"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:10px;font-family:var(--mono);color:var(--accent);background:rgba(255,69,0,.1);padding:1px 6px;border-radius:3px">r/${esc(e.subreddit)}</span><span style="font-size:10px;font-family:var(--mono);color:var(--purple);background:rgba(167,139,250,.1);padding:1px 6px;border-radius:3px">score ${e.score}/10</span><span style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-left:auto">${esc(e.postedAgo||'')}</span></div><div style="font-size:12px;font-weight:500;color:#c8cad4;margin-bottom:5px;line-height:1.4">${esc(e.title)}</div><div style="font-size:11px;color:var(--muted);line-height:1.6;font-style:italic;border-left:2px solid var(--border2);padding-left:10px">"${esc(e.quote)}"</div></div>`).join('')}</div>`:''}
+          ${outlineOpen?`<div style="margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px"><div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px">Suggested sections</div>${(gap.sections||[]).map((s,i)=>`<div style="display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--muted);margin-bottom:7px"><span style="font-family:var(--mono);font-size:10px;color:var(--border2);min-width:18px;margin-top:2px">${String(i+1).padStart(2,'0')}</span>${esc(s)}</div>`).join('')}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
 }
 
-async function dismissBrandMention(id) {
-  await api(`/api/brand-mentions/${id}/dismiss`, 'POST');
-  if (brandMentions?.mentions) {
-    brandMentions.mentions = brandMentions.mentions.filter(m => m.id !== id);
-    renderBrandMentions();
-  }
-}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function timeAgo(iso){if(!iso)return'';const m=Math.floor((Date.now()-new Date(iso))/60000);if(m<1)return'just now';if(m<60)return`${m}m ago`;const h=Math.floor(m/60);if(h<24)return`${h}h ago`;return`${Math.floor(h/24)}d ago`;}
+function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function timeAgo(iso){ if(!iso)return''; const m=Math.floor((Date.now()-new Date(iso))/60000); if(m<1)return'just now'; if(m<60)return`${m}m ago`; const h=Math.floor(m/60); if(h<24)return`${h}h ago`; return`${Math.floor(h/24)}d ago`; }
-function toast(msg){ document.querySelectorAll('.toast').forEach(t=>t.remove()); const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2800); }
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
-async function init() {
-  await loadConfig();
-  await loadMatches();
-  await refreshStatus();
-  setInterval(refreshStatus,10000);
-  setInterval(loadMatches,20000);
-}
-
-if(sessionToken) checkAuth().then(ok=>{ if(!ok){ sessionToken=null; localStorage.removeItem('rm_token'); } });
+async function init(){await loadConfig();await loadMatches();await refreshStatus();setInterval(refreshStatus,10000);setInterval(loadMatches,20000);}
+if(sessionToken)checkAuth().then(ok=>{if(!ok){sessionToken=null;localStorage.removeItem('rm_token');}});
 </script>
 </body>
 </html>
