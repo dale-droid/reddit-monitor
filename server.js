@@ -15,20 +15,37 @@ const supabase = createClient(
 );
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
+// Tokens are HMAC-signed with the dashboard password so they survive server
+// restarts without needing an in-memory session store.
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD;
-const sessions = new Set();
+
+function signToken(payload) {
+  const data = JSON.stringify(payload);
+  const sig = crypto.createHmac('sha256', DASHBOARD_PASSWORD).update(data).digest('hex');
+  return Buffer.from(JSON.stringify({ data, sig })).toString('base64');
+}
+
+function verifyToken(token) {
+  try {
+    const { data, sig } = JSON.parse(Buffer.from(token, 'base64').toString());
+    const expected = crypto.createHmac('sha256', DASHBOARD_PASSWORD).update(data).digest('hex');
+    if (sig !== expected) return null;
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
 
 function requireAuth(req, res, next) {
   const token = req.headers['x-session-token'];
-  if (token && sessions.has(token)) return next();
+  if (token && verifyToken(token)) return next();
   res.status(401).json({ error: 'Unauthorised' });
 }
 
 app.post('/api/login', (req, res) => {
   const { password } = req.body;
   if (password === DASHBOARD_PASSWORD) {
-    const token = crypto.randomBytes(32).toString('hex');
-    sessions.add(token);
+    const token = signToken({ loggedInAt: Date.now() });
     res.json({ token });
   } else {
     res.status(401).json({ error: 'Wrong password' });
@@ -36,7 +53,7 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  sessions.delete(req.headers['x-session-token']);
+  // Client-side: browser removes the token from localStorage
   res.json({ ok: true });
 });
 
@@ -391,12 +408,148 @@ async function runPoll() {
       }
     } catch (e) { console.error('Content gap analysis error:', e.message); }
   }
+
+  // Auto brand scan (runs every poll)
+  try {
+    await runBrandScan();
+  } catch (e) { console.error('Brand scan error:', e.message); }
 }
 
 function schedulePoll(mins) {
   if (pollTimer) clearInterval(pollTimer);
   if (mins > 0) pollTimer = setInterval(runPoll, mins * 60 * 1000);
 }
+
+// ─── Brand monitor ────────────────────────────────────────────────────────────
+// Brand terms are stored in config (key: 'main', field: brandTerms)
+// Each entry: { term: string, type: 'own'|'competitor', color: string, active: boolean }
+// Default terms used only if none are configured yet
+const DEFAULT_BRAND_TERMS = [
+  { term: 'Green Coffee Collective', type: 'own',        color: '#ff4500', active: true },
+  { term: 'GCC',                     type: 'own',        color: '#ff4500', active: true },
+  { term: 'Small Batch Roasting',    type: 'competitor', color: '#4e9eff', active: true },
+  { term: 'Roast Rebels',            type: 'competitor', color: '#a78bfa', active: true },
+];
+
+async function getBrandTerms() {
+  const config = await getConfig();
+  const terms = config.brandTerms;
+  if (terms?.length) return terms.filter(t => t.active !== false);
+  return DEFAULT_BRAND_TERMS;
+}
+
+async function searchRedditForTerm(term, limit = 10) {
+  const url = `https://www.reddit.com/search.json?q=${encodeURIComponent('"' + term + '"')}&sort=new&limit=${limit}&type=link`;
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': 'RedditMonitor/1.0' }, signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.data?.children || []).map(c => ({
+      id: c.data.id,
+      title: c.data.title,
+      selftext: c.data.selftext || '',
+      author: c.data.author,
+      subreddit: c.data.subreddit,
+      url: `https://reddit.com${c.data.permalink}`,
+      score: c.data.score,
+      created_utc: c.data.created_utc,
+    }));
+  } catch (e) {
+    console.error(`Brand search failed for "${term}":`, e.message);
+    return [];
+  }
+}
+
+async function analyseBrandMention(post, term, brandType) {
+  const res = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514', max_tokens: 300,
+    messages: [{ role: 'user', content: `Analyse this Reddit post that mentions "${term}" (a green coffee supplier). Respond ONLY with valid JSON.
+
+POST:
+Title: ${post.title}
+Body: ${post.selftext.slice(0, 800) || '(no body)'}
+Subreddit: r/${post.subreddit}
+
+{
+  "relevant": <true if the post genuinely mentions this brand in a coffee context, false if coincidental>,
+  "sentiment": "<'positive' | 'neutral' | 'negative' | 'comparison' | 'warm_lead'>",
+  "summary": "<one sentence summary of what's being said about the brand>",
+  "context": "<the specific sentence or phrase that mentions the brand, or null>",
+  "warmLeadReason": "<if warm_lead or negative competitor: why this person might be open to alternatives, else null>"
+}
+
+Use 'warm_lead' when someone is unhappy with a competitor or actively shopping around for a new supplier.` }]
+  });
+  return JSON.parse(res.content[0].text.trim());
+}
+
+async function runBrandScan() {
+  const brandTerms = await getBrandTerms();
+  if (!brandTerms.length) { console.log('No brand terms configured — skipping brand scan.'); return null; }
+
+  console.log(`Running brand scan for ${brandTerms.length} terms...`);
+  const allMentions = [];
+  const seenIds = new Set();
+
+  for (const brand of brandTerms) {
+    const posts = await searchRedditForTerm(brand.term);
+    for (const post of posts) {
+      if (seenIds.has(post.id)) continue;
+      seenIds.add(post.id);
+      try {
+        const analysis = await analyseBrandMention(post, brand.term, brand.type);
+        if (!analysis.relevant) continue;
+        allMentions.push({
+          id: `bm_${post.id}_${brand.term.replace(/\s/g,'_')}`,
+          brand: brand.term,
+          brandType: brand.type,
+          brandColor: brand.color || '#6b7080',
+          subreddit: post.subreddit,
+          title: post.title,
+          author: post.author,
+          url: post.url,
+          postedAt: new Date(post.created_utc * 1000).toISOString(),
+          sentiment: analysis.sentiment,
+          summary: analysis.summary,
+          context: analysis.context,
+          warmLeadReason: analysis.warmLeadReason,
+          dismissed: false,
+        });
+        await new Promise(r => setTimeout(r, 400));
+      } catch (e) {
+        console.error(`Brand analysis error for ${post.id}:`, e.message);
+      }
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  const result = { mentions: allMentions, scannedAt: new Date().toISOString(), termCount: brandTerms.length };
+  await supabase.from('config').upsert({ key: 'brand_mentions', value: result }, { onConflict: 'key' });
+  console.log(`Brand scan complete — ${allMentions.length} relevant mentions found.`);
+  return result;
+}
+
+app.get('/api/brand-mentions', requireAuth, async (req, res) => {
+  const { data } = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
+  res.json(data?.value || null);
+});
+
+app.post('/api/brand-mentions/scan', requireAuth, async (req, res) => {
+  try {
+    const result = await runBrandScan();
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/brand-mentions/:id/dismiss', requireAuth, async (req, res) => {
+  const { data: existing } = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
+  if (!existing?.value) return res.status(404).json({ error: 'Not found' });
+  existing.value.mentions = existing.value.mentions.filter(m => m.id !== req.params.id);
+  await supabase.from('config').upsert({ key: 'brand_mentions', value: existing.value }, { onConflict: 'key' });
+  res.json({ ok: true });
+});
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.get('/api/matches', requireAuth, async (req, res) => {
