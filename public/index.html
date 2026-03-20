@@ -228,13 +228,6 @@
 
     <div class="sidebar-divider"></div>
 
-    <!-- Intent themes -->
-    <div class="section-label">Intent themes</div>
-    <div id="themeList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px"></div>
-    <button class="btn btn-ghost btn-full" onclick="openThemeModal(null)" style="border-style:dashed;margin-bottom:4px">+ Add theme</button>
-
-    <div class="sidebar-divider"></div>
-
     <!-- Monitor config -->
     <div class="section-label">Monitor</div>
     <div class="field">
@@ -249,6 +242,10 @@
         <input id="kwIn" class="tag-input" placeholder="e.g. green beans" onkeydown="tagKey(event,'keywords')">
       </div>
       <div class="hint">Post must match at least one</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Intent</div>
+      <textarea id="intentIn" placeholder="Describe what posts you're looking for..."></textarea>
     </div>
     <div class="field">
       <div class="field-label">Min relevance score</div>
@@ -269,29 +266,6 @@
     </div>
     <button class="btn btn-primary btn-full" onclick="saveConfig()" id="saveBtn" style="margin-top:4px">Save & apply</button>
   </aside>
-
-  <!-- Theme modal -->
-  <div id="themeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:460px;animation:fadeIn .15s ease">
-      <div style="font-size:15px;font-weight:600;margin-bottom:18px" id="themeModalTitle">New intent theme</div>
-      <div class="field">
-        <div class="field-label">Theme name</div>
-        <input type="text" id="themeNameIn" placeholder="e.g. Green bean sourcing">
-      </div>
-      <div class="field">
-        <div class="field-label">Intent description — Claude evaluates each post against this</div>
-        <textarea id="themeDescIn" placeholder="Describe what kinds of posts you want to flag for this theme..." style="min-height:100px"></textarea>
-      </div>
-      <div class="field">
-        <div class="field-label">Tag colour</div>
-        <div id="themeColorPicker" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn btn-ghost" onclick="closeThemeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveTheme()">Save theme</button>
-      </div>
-    </div>
-  </div>
 
   <main>
 
@@ -431,26 +405,25 @@ function switchTab(tab, el) {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const THEME_COLORS = ['#ff4500','#4e9eff','#a78bfa','#3ecf8e','#f97316','#f5c842','#ec4899','#14b8a6'];
-let cfg = { subreddits:[], keywords:[], themes:[], pollIntervalMinutes:15, minRelevanceScore:7, brandVoiceDescription:'', brandVoiceUrls:[], brandVoiceCache:null, brandVoiceCachedAt:null, sitePageUrls:[] };
+let cfg = { subreddits:[], keywords:[], intent:'', pollIntervalMinutes:15, minRelevanceScore:7, brandVoiceDescription:'', brandVoiceUrls:[], brandVoiceCache:null, brandVoiceCachedAt:null };
 
 async function loadConfig() {
   const res = await api('/api/config');
   if (!res.ok) return;
   cfg = await res.json();
-  if (!cfg.themes) cfg.themes = [];
   renderTags('subreddits');
   renderTags('keywords');
+  document.getElementById('intentIn').value = cfg.intent || '';
   document.getElementById('scoreSlider').value = cfg.minRelevanceScore || 7;
   document.getElementById('scoreVal').textContent = cfg.minRelevanceScore || 7;
   document.getElementById('intervalSel').value = cfg.pollIntervalMinutes || 15;
   document.getElementById('voiceDesc').value = cfg.brandVoiceDescription || '';
-  renderThemes();
   renderUrlList();
   renderVoicePreview();
 }
 
 async function saveConfig() {
+  cfg.intent = document.getElementById('intentIn').value.trim();
   cfg.minRelevanceScore = +document.getElementById('scoreSlider').value;
   cfg.pollIntervalMinutes = +document.getElementById('intervalSel').value;
   const btn = document.getElementById('saveBtn');
@@ -459,92 +432,6 @@ async function saveConfig() {
   btn.textContent = '✓ Saved!';
   setTimeout(() => { btn.textContent = 'Save & apply'; btn.disabled = false; }, 2000);
   pollNow();
-}
-
-// ─── Theme management ─────────────────────────────────────────────────────────
-let editingThemeId = null;
-
-function renderThemes() {
-  const list = document.getElementById('themeList');
-  if (!cfg.themes?.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px 0">No themes yet — add one to start flagging posts.</div>';
-    return;
-  }
-  list.innerHTML = cfg.themes.map(t => `
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;opacity:${t.active?1:.5}">
-      <div style="display:flex;align-items:center;gap:7px">
-        <div onclick="toggleTheme('${t.id}')" style="width:8px;height:8px;border-radius:50%;background:${t.active?t.color:'var(--border2)'};cursor:pointer;flex-shrink:0;box-shadow:${t.active?`0 0 6px ${t.color}80`:'none'};transition:all .2s"></div>
-        <span style="font-size:12px;font-weight:500;flex:1;color:${t.active?'var(--text)':'var(--muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.name)}</span>
-        <button onclick="openThemeModal('${t.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px">✎</button>
-        <button onclick="deleteTheme('${t.id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px">×</button>
-      </div>
-      <div style="font-size:10px;color:var(--muted);line-height:1.4;padding-left:15px;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(t.description)}</div>
-    </div>`).join('');
-}
-
-function openThemeModal(id) {
-  editingThemeId = id;
-  const modal = document.getElementById('themeModal');
-  const title = document.getElementById('themeModalTitle');
-  const nameIn = document.getElementById('themeNameIn');
-  const descIn = document.getElementById('themeDescIn');
-  // Build colour picker
-  document.getElementById('themeColorPicker').innerHTML = THEME_COLORS.map(c =>
-    `<div onclick="selectThemeColor('${c}')" id="cp-${c.slice(1)}" style="width:24px;height:24px;border-radius:6px;background:${c};cursor:pointer;border:2px solid transparent;transition:border .1s"></div>`
-  ).join('');
-  if (id) {
-    const t = cfg.themes.find(x => x.id === id);
-    title.textContent = 'Edit theme';
-    nameIn.value = t.name;
-    descIn.value = t.description;
-    selectThemeColor(t.color);
-  } else {
-    title.textContent = 'New intent theme';
-    nameIn.value = '';
-    descIn.value = '';
-    selectThemeColor(THEME_COLORS[0]);
-  }
-  modal.style.display = 'flex';
-}
-
-function closeThemeModal() {
-  document.getElementById('themeModal').style.display = 'none';
-  editingThemeId = null;
-}
-
-let selectedThemeColor = THEME_COLORS[0];
-function selectThemeColor(c) {
-  selectedThemeColor = c;
-  document.querySelectorAll('#themeColorPicker > div').forEach(el => el.style.border = '2px solid transparent');
-  const el = document.getElementById('cp-' + c.slice(1));
-  if (el) el.style.border = '2px solid white';
-}
-
-function saveTheme() {
-  const name = document.getElementById('themeNameIn').value.trim();
-  const desc = document.getElementById('themeDescIn').value.trim();
-  if (!name || !desc) { toast('Please fill in both name and description'); return; }
-  if (!cfg.themes) cfg.themes = [];
-  if (editingThemeId) {
-    cfg.themes = cfg.themes.map(t => t.id === editingThemeId ? { ...t, name, description: desc, color: selectedThemeColor } : t);
-    toast('✓ Theme updated');
-  } else {
-    cfg.themes.push({ id: 't' + Date.now(), name, description: desc, color: selectedThemeColor, active: true });
-    toast('✓ Theme created');
-  }
-  closeThemeModal();
-  renderThemes();
-}
-
-function toggleTheme(id) {
-  cfg.themes = cfg.themes.map(t => t.id === id ? { ...t, active: !t.active } : t);
-  renderThemes();
-}
-
-function deleteTheme(id) {
-  cfg.themes = cfg.themes.filter(t => t.id !== id);
-  renderThemes();
-  toast('Theme removed');
 }
 
 // ─── Brand voice ──────────────────────────────────────────────────────────────
