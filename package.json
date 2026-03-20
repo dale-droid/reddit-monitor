@@ -1,10 +1,14 @@
 {
   "name": "reddit-monitor",
-  "version": "2.0.0",
-  "description": "Shared Reddit monitor with AI matching, Supabase backend, and password protection",
+  "version": "1.0.0",
+  "description": "Reddit Monitor for GCC",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "echo 'No build step'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
