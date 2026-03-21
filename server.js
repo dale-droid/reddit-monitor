@@ -58,21 +58,52 @@ app.post('/api/logout', (req, res) => {
 });
 
 // ─── Config ───────────────────────────────────────────────────────────────────
+const CONFIG_DEFAULTS = {
+  subreddits: [],
+  keywords: [],
+  themes: [],
+  brandTerms: [
+    { id:'bt1', term:'Green Coffee Collective', type:'own',        color:'#ff4500', active:true },
+    { id:'bt2', term:'GCC',                     type:'own',        color:'#ff4500', active:true },
+    { id:'bt3', term:'Small Batch Roasting',    type:'competitor', color:'#4e9eff', active:true },
+    { id:'bt4', term:'Roast Rebels',            type:'competitor', color:'#a78bfa', active:true },
+  ],
+  pollIntervalMinutes: 15,
+  minRelevanceScore: 7,
+  brandVoiceDescription: '',
+  brandVoiceUrls: [],
+  brandVoiceCache: null,
+  brandVoiceCachedAt: null,
+  sitePageUrls: [],
+};
+
 async function getConfig() {
   const { data } = await supabase
     .from('config').select('value').eq('key', 'main').single();
-  return data?.value || {
-    subreddits: [],
-    keywords: [],
-    themes: [],
-    pollIntervalMinutes: 15,
-    minRelevanceScore: 7,
-    brandVoiceDescription: '',
-    brandVoiceUrls: [],
-    brandVoiceCache: null,
-    brandVoiceCachedAt: null,
-    sitePageUrls: [],
-  };
+
+  if (!data?.value) {
+    // First run — persist defaults to Supabase so they survive restarts
+    await supabase.from('config').upsert({ key: 'main', value: CONFIG_DEFAULTS }, { onConflict: 'key' });
+    return CONFIG_DEFAULTS;
+  }
+
+  const cfg = data.value;
+
+  // Backfill any missing fields so existing configs gain new features automatically
+  let changed = false;
+  if (!cfg.brandTerms || cfg.brandTerms.length === 0) {
+    cfg.brandTerms = CONFIG_DEFAULTS.brandTerms;
+    changed = true;
+  }
+  if (!cfg.themes) { cfg.themes = []; changed = true; }
+  if (!cfg.sitePageUrls) { cfg.sitePageUrls = []; changed = true; }
+  if (!cfg.brandVoiceUrls) { cfg.brandVoiceUrls = []; changed = true; }
+
+  if (changed) {
+    await supabase.from('config').upsert({ key: 'main', value: cfg }, { onConflict: 'key' });
+  }
+
+  return cfg;
 }
 
 async function setConfig(cfg) {
@@ -168,29 +199,48 @@ function passesKeywordFilter(post, keywords) {
 async function evaluatePost(post, themes) {
   const themeList = themes.map((t, i) => `${i + 1}. "${t.name}": ${t.description}`).join('\n');
   const res = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514', max_tokens: 400,
-    messages: [{ role: 'user', content: `Evaluate this Reddit post against each intent theme. Respond ONLY with valid JSON.
+    model: 'claude-sonnet-4-20250514', max_tokens: 600,
+    messages: [{ role: 'user', content: `You are evaluating a Reddit post for a green coffee supplier that sells unroasted beans to home roasters and small roasters across Europe. Score how relevant this post is for engagement.
 
-THEMES:
+INTENT THEMES (what we want to find):
 ${themeList}
 
 POST:
 Title: ${post.title}
-Body: ${post.selftext || '(no body)'}
+Body: ${(post.selftext || '').slice(0, 1000) || '(no body)'}
 Subreddit: r/${post.subreddit}
 Flair: ${post.flair || 'none'}
 
+Score each theme 1-10 where:
+- 8-10: Post is clearly about this topic, strong opportunity to engage helpfully
+- 5-7: Post touches on this topic, moderate engagement opportunity  
+- 1-4: Post barely relates to this theme
+
+The overallScore should be the HIGHEST individual theme score (not an average).
+
+Respond ONLY with valid JSON, no other text:
 {
-  "overallScore": <integer 1-10>,
-  "summary": "<one sentence neutral summary>",
-  "reason": "<one sentence why this is or isn't relevant>",
+  "overallScore": <integer 1-10, must equal the highest themeScore>,
+  "summary": "<one sentence neutral summary of what this post is asking or discussing>",
+  "reason": "<one sentence explaining the engagement opportunity>",
   "topics": ["<topic1>", "<topic2>"],
   "themeScores": [
-    { "themeId": "<theme name>", "score": <1-10>, "matches": <true|false> }
+    { "themeId": "<exact theme name>", "score": <1-10>, "matches": <true if score >= 6> }
   ]
 }` }]
   });
-  return JSON.parse(res.content[0].text.trim());
+
+  const raw = res.content[0].text.trim().replace(/```json|```/g, '');
+  const parsed = JSON.parse(raw);
+
+  // Safety: ensure overallScore actually reflects theme scores
+  const maxThemeScore = Math.max(...(parsed.themeScores || []).map(ts => ts.score || 0), 0);
+  if (maxThemeScore > 0 && parsed.overallScore < maxThemeScore) {
+    parsed.overallScore = maxThemeScore;
+  }
+
+  console.log(`  Eval: "${post.title.slice(0, 50)}" → ${parsed.overallScore}/10`);
+  return parsed;
 }
 
 // ─── Claude: draft reply ──────────────────────────────────────────────────────
@@ -237,52 +287,72 @@ async function runContentGapAnalysis(matches, voiceContext, siteUrls = [], exist
   if (!matches.length) throw new Error('No matches to analyse');
   const sitePages = await fetchSitePageTexts(siteUrls);
   const siteContext = sitePages.length
-    ? `EXISTING SITE CONTENT:\n` + sitePages.map(p => `URL: ${p.url}\n---\n${p.text}`).join('\n\n===\n\n')
-    : 'No site pages provided.';
+    ? `EXISTING SITE CONTENT (${sitePages.length} pages):\n` + sitePages.map(p => `URL: ${p.url}\n---\n${p.text}`).join('\n\n===\n\n')
+    : 'No site pages provided — assume the site has minimal content.';
   const doneTitles = existingGaps.filter(g => g.status === 'done').map(g => `- "${g.title}"`);
   const inProgressTitles = existingGaps.filter(g => g.status === 'in_progress').map(g => `- "${g.title}"`);
   const existingContext = [
-    doneTitles.length ? `GAPS COMPLETED:\n${doneTitles.join('\n')}` : '',
-    inProgressTitles.length ? `IN PROGRESS:\n${inProgressTitles.join('\n')}` : '',
+    doneTitles.length ? `GAPS ALREADY COMPLETED:\n${doneTitles.join('\n')}` : '',
+    inProgressTitles.length ? `IN PROGRESS (skip these):\n${inProgressTitles.join('\n')}` : '',
   ].filter(Boolean).join('\n\n');
-  const postSummaries = matches.slice(0, 60).map((m, i) => `${i + 1}. [r/${m.subreddit}] "${m.title}"`).join('\n');
-  const voiceNote = voiceContext ? `Brand voice:\n${voiceContext}\n\n` : '';
+
+  // Include full post body for richness — not just titles
+  const postSummaries = matches.slice(0, 100).map((m, i) => {
+    const body = m.selftext ? m.selftext.slice(0, 300).replace(/\n+/g, ' ') : '';
+    return `${i + 1}. [r/${m.subreddit}] "${m.title}"${body ? `\n   "${body}..."` : ''}`;
+  }).join('\n\n');
+
+  const voiceNote = voiceContext ? `Brand voice context:\n${voiceContext}\n\n` : '';
 
   const res = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514', max_tokens: 4000,
-    messages: [{ role: 'user', content: `Content strategist analysing Reddit posts for a green coffee supplier (sells unroasted beans to home roasters/small roasters across Europe).
+    model: 'claude-sonnet-4-20250514', max_tokens: 8000,
+    messages: [{ role: 'user', content: `You are a senior content strategist conducting a COMPREHENSIVE content audit for a green coffee supplier called Green Coffee Collective (GCC). They sell unroasted/green beans to home roasters and small startup roasters across Europe, primarily the UK. Their sourcing model has three tiers: Staples (reliable everyday lots), Seasonal (crop-fresh rotating lots), and Rare & Special Lots.
 
-${voiceNote}${siteContext}
+${voiceNote}YOUR TASK:
+Analyse every Reddit post below and produce an EXHAUSTIVE list of content gaps — things people are repeatedly asking, struggling with, or searching for that GCC's website doesn't cover well. Be thorough and specific. Do not be conservative. A comprehensive content strategy requires identifying ALL gaps, not just the obvious ones.
 
-${existingContext ? existingContext + '\n\n' : ''}FLAGGED POSTS (${matches.length}):
+${siteContext}
+
+${existingContext ? existingContext + '\n\n' : ''}REDDIT POSTS (${matches.length} posts from home roasting and specialty coffee communities):
 ${postSummaries}
 
-RULES:
-1. Don't suggest gaps already well covered by the site.
-2. Partially covered = update (type:"update") with existing page.
-3. Missing = new content (type:"new") or glossary (type:"glossary").
-4. Done gaps: only re-suggest if 3+ posts still ask — set needs_update:true.
-5. Never suggest in-progress items.
-6. Include real evidence with direct quotes.
-7. Urgency: high=5+ posts or 2+ subreddits, medium=3-4, low=1-2.
+ANALYSIS INSTRUCTIONS:
+1. Read every post carefully. Identify ALL distinct questions, pain points, and information needs.
+2. Group related questions into content pieces — one gap can address multiple related questions.
+3. For each gap, check against the site content: is it missing entirely (type:"new"), partially covered (type:"update"), or a terminology definition needed (type:"glossary")?
+4. Urgency: "high" = appears in 3+ posts or across 2+ subreddits, "medium" = 2 posts, "low" = 1 post but clearly important.
+5. Include specific quotes from the posts as evidence — these are real words your audience uses.
+6. Identify the exact recurring phrases and language — these are SEO gold and should inform your copy.
+7. Think beyond the obvious: roast profiles for specific origins, processing method effects, storage, equipment compatibility, cupping and tasting notes, sourcing ethics, pricing transparency, subscription value, beginner mistakes, advanced techniques, origin deep-dives.
 
-Valid JSON only:
+TARGET: Identify 12-20 content gaps minimum. This should be a comprehensive working list for a content calendar, not a light scan.
+
+Respond ONLY with valid JSON:
 {
-  "summary": "<2-3 sentence observation>",
-  "gaps": [{
-    "title": "<title>", "type": "<new|update|glossary>", "urgency": "<high|medium|low>",
-    "needs_update": <bool>, "update_reason": "<if needs_update>",
-    "rationale": "<why this matters>", "angle": "<specific approach>",
-    "contentType": "<blog|guide|faq|glossary>",
-    "existingPage": <null or {"title":"...","url":"..."}>,
-    "sections": ["<s1>","<s2>","<s3>","<s4>"],
-    "frequency": <int>, "subreddits": ["<sub>"],
-    "recurringPhrases": ["<phrase>"],
-    "evidence": [{"subreddit":"<sub>","score":<int>,"title":"<title>","quote":"<quote>","postedAgo":"<age>"}]
-  }]
+  "summary": "<3-4 sentence executive summary of the dominant themes, patterns, and biggest opportunities>",
+  "gaps": [
+    {
+      "title": "<specific, actionable content title>",
+      "type": "<new|update|glossary>",
+      "urgency": "<high|medium|low>",
+      "needs_update": <bool>,
+      "update_reason": "<if needs_update: specific gap in existing content>",
+      "rationale": "<2-3 sentences: what people are asking, why this matters commercially, what GCC loses by not having it>",
+      "angle": "<specific unique hook or approach that makes this piece stand out>",
+      "contentType": "<blog|guide|faq|glossary|origin-profile|recipe|comparison>",
+      "existingPage": <null or {"title":"page name","url":"url if known"}>,
+      "sections": ["<section 1>","<section 2>","<section 3>","<section 4>","<section 5>"],
+      "frequency": <integer: number of posts touching this gap>,
+      "subreddits": ["<sub1>","<sub2>"],
+      "recurringPhrases": ["<exact phrase 1>","<exact phrase 2>","<exact phrase 3>"],
+      "evidence": [
+        {"subreddit":"<sub>","score":<relevance 1-10>,"title":"<post title>","quote":"<direct quote showing the gap>","postedAgo":"<approximate age>"}
+      ]
+    }
+  ]
 }
 
-4-8 gaps, quality over quantity.` }]
+Be exhaustive. A good content strategy for a specialist supplier like GCC should have at least 15 distinct pieces to work on.` }]
   });
 
   const parsed = JSON.parse(res.content[0].text.trim().replace(/```json|```/g, ''));
@@ -356,10 +426,12 @@ async function runPoll() {
         try {
           const evaluation = await evaluatePost(post, themes);
           const matchedThemeIds = (evaluation.themeScores || [])
-            .filter(ts => ts.matches && ts.score >= config.minRelevanceScore)
+            .filter(ts => ts.matches || ts.score >= 6)
             .map(ts => themes.find(t => t.name === ts.themeId)?.id)
             .filter(Boolean);
-          if (evaluation.overallScore >= config.minRelevanceScore && matchedThemeIds.length > 0) {
+          const passes = evaluation.overallScore >= (config.minRelevanceScore || 7) && matchedThemeIds.length > 0;
+          console.log(`  ${passes ? '✓' : '✗'} "${post.title.slice(0,50)}" score=${evaluation.overallScore} themes=${matchedThemeIds.length}`);
+          if (passes) {
             await supabase.from('matches').insert({
               post_id: post.id, subreddit: post.subreddit, title: post.title,
               selftext: post.selftext, author: post.author, url: post.url,
@@ -642,14 +714,37 @@ app.get('/api/content-gaps', requireAuth, async (req, res) => {
 
 app.post('/api/content-gaps/analyse', requireAuth, async (req, res) => {
   const config = await getConfig();
-  const { data: matches } = await supabase.from('matches').select('title, subreddit, evaluation')
-    .neq('status', 'dismissed').order('matched_at', { ascending: false }).limit(60);
-  if (!matches?.length) return res.status(400).json({ error: 'No matches to analyse yet.' });
+
+  // Fetch from both flagged posts AND directly from subreddits for maximum depth
+  const { data: flaggedMatches } = await supabase.from('matches')
+    .select('title, subreddit, selftext, evaluation').neq('status', 'dismissed')
+    .order('matched_at', { ascending: false }).limit(100);
+
+  // Also fetch recent posts directly from all monitored subreddits
+  const directPosts = [];
+  for (const subreddit of (config.subreddits || []).slice(0, 6)) {
+    try {
+      const posts = await fetchSubredditPosts(subreddit, 25);
+      directPosts.push(...posts.map(p => ({ title: p.title, subreddit: p.subreddit, selftext: p.selftext, evaluation: null })));
+    } catch (e) { console.error(`Direct fetch failed for r/${subreddit}:`, e.message); }
+  }
+
+  // Merge, deduplicate by title
+  const seenTitles = new Set();
+  const allMatches = [...(flaggedMatches || []), ...directPosts].filter(m => {
+    if (seenTitles.has(m.title)) return false;
+    seenTitles.add(m.title);
+    return true;
+  });
+
+  if (!allMatches.length) return res.status(400).json({ error: 'No posts found. Make sure you have subreddits configured.' });
+
   const existing = await supabase.from('config').select('value').eq('key', 'content_gaps').single();
   const existingGaps = existing?.data?.value?.gaps || [];
   const siteUrls = [...(config.brandVoiceUrls || []), ...(config.sitePageUrls || [])].filter(Boolean);
+
   try {
-    const result = await runContentGapAnalysis(matches, config.brandVoiceCache || '', siteUrls, existingGaps);
+    const result = await runContentGapAnalysis(allMatches, config.brandVoiceCache || '', siteUrls, existingGaps);
     await supabase.from('config').upsert({ key: 'content_gaps', value: result }, { onConflict: 'key' });
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
