@@ -167,6 +167,7 @@
     <button class="nav-tab" onclick="switchTab('archive',this)"><span class="tab-icon">🗄</span>Archive<span class="nav-badge" id="archiveBadge" style="display:none;background:var(--surface2);color:var(--muted);border:1px solid var(--border)">0</span></button>
     <button class="nav-tab" onclick="switchTab('analytics',this)"><span class="tab-icon">📊</span>Analytics</button>
     <button class="nav-tab" onclick="switchTab('brands',this)"><span class="tab-icon">👁</span>Brand Monitor<span class="nav-badge" id="brandBadge" style="display:none;background:var(--yellow);color:#111">0</span></button>
+    <button class="nav-tab" onclick="switchTab('crawl',this)"><span class="tab-icon">🔍</span>Deep Crawl</button>
     <button class="nav-tab" onclick="switchTab('gaps',this)"><span class="tab-icon">💡</span>Content Gaps</button>
     <button class="nav-tab" onclick="switchTab('settings',this)"><span class="tab-icon">⚙</span>Settings</button>
   </aside>
@@ -215,6 +216,72 @@
           <button class="btn btn-primary" onclick="scanBrands()" id="brandScanBtn">↻ Scan now</button>
         </div>
         <div id="brandContent"><div class="empty"><div class="empty-icon">👁</div><div class="empty-title">No scan yet</div><div class="empty-desc">Click "Scan now" to search Reddit for brand mentions.<br>Scans also run automatically after each poll.</div></div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-crawl">
+      <div class="panel-inner">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Deep Crawl</div>
+            <div class="panel-sub">Walk back through your monitored subreddits page by page — finds older posts the regular poll misses. Rate-limited to be respectful to Reddit.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="startCrawl()" id="crawlStartBtn">▶ Start crawl</button>
+            <button class="btn btn-ghost" onclick="stopCrawl()" id="crawlStopBtn" style="display:none">◼ Stop</button>
+          </div>
+        </div>
+
+        <!-- Config -->
+        <div id="crawlConfig" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px">Crawl settings</div>
+          <div class="two-col">
+            <div class="field">
+              <div class="field-label">Pages per subreddit</div>
+              <div class="field-hint">Each page = 100 posts. 10 pages = ~1,000 posts per subreddit.</div>
+              <select id="crawlMaxPages" style="margin-top:6px">
+                <option value="5">5 pages (~500 posts)</option>
+                <option value="10" selected>10 pages (~1,000 posts)</option>
+                <option value="20">20 pages (~2,000 posts)</option>
+                <option value="50">50 pages (~5,000 posts)</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Delay between pages</div>
+              <div class="field-hint">3 seconds is respectful. Don't go lower.</div>
+              <div style="margin-top:10px;font-size:12px;color:var(--muted);font-family:var(--mono)">3 seconds (fixed)</div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:4px">
+            <div class="field-label">Subreddits to crawl</div>
+            <div class="field-hint">Defaults to all your configured subreddits. Leave blank to crawl all of them.</div>
+            <div id="crawlSubredditPicker" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="crawlProgress" style="display:none">
+          <!-- Overall stats -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px" id="crawlTotals"></div>
+
+          <!-- Per-subreddit progress -->
+          <div style="display:flex;flex-direction:column;gap:8px" id="crawlSubredditRows"></div>
+
+          <!-- Log -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:16px;overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Activity log</div>
+            <div id="crawlLog" style="padding:12px 14px;font-size:11px;font-family:var(--mono);color:var(--muted);max-height:200px;overflow-y:auto;line-height:1.8"></div>
+          </div>
+        </div>
+
+        <!-- Idle state -->
+        <div id="crawlIdle">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12px;color:var(--muted);line-height:1.7">
+            <span style="color:var(--text);font-weight:500">How deep crawl works: </span>
+            The regular poll fetches the 25 newest posts from each subreddit every 15 minutes. Deep crawl goes back through history — up to 5,000 posts per subreddit — checking every post for intent matches and brand mentions.
+            It runs in the background at a rate Reddit won't block, and you can watch it progress in real time. Results flow into your Flagged Posts and Brand Monitor as they're found.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -360,6 +427,7 @@ function switchTab(tab,el){
   if(tab==='gaps')loadGaps();
   if(tab==='brands')loadBrandMentions();
   if(tab==='archive')loadArchive();
+  if(tab==='crawl')initCrawlPanel();
 }
 
 let cfg={subreddits:[],keywords:[],themes:[],brandTerms:[],pollIntervalMinutes:15,minRelevanceScore:7,brandVoiceDescription:'',brandVoiceUrls:[],brandVoiceCache:null,brandVoiceCachedAt:null,sitePageUrls:[]};
@@ -807,6 +875,124 @@ async function runTestPoll(){
       </div>`;
   }
   btn.innerHTML='↻ Run test';btn.disabled=false;
+}
+
+// ─── Deep crawl ───────────────────────────────────────────────────────────────
+let crawlPollInterval = null;
+let selectedCrawlSubs = new Set();
+
+function initCrawlPanel() {
+  renderCrawlSubredditPicker();
+  loadCrawlStatus();
+}
+
+function renderCrawlSubredditPicker() {
+  const el = document.getElementById('crawlSubredditPicker');
+  if (!cfg.subreddits?.length) { el.innerHTML='<div style="font-size:11px;color:var(--muted)">No subreddits configured — go to Settings first.</div>'; return; }
+  if (!selectedCrawlSubs.size) cfg.subreddits.forEach(s => selectedCrawlSubs.add(s));
+  el.innerHTML = cfg.subreddits.map(s => {
+    const active = selectedCrawlSubs.has(s);
+    return `<button onclick="toggleCrawlSub('${s}')" style="padding:4px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid ${active?'var(--accent)':'var(--border)'};background:${active?'rgba(255,69,0,.1)':'transparent'};color:${active?'var(--accent)':'var(--muted)'}">r/${s}</button>`;
+  }).join('');
+}
+
+function toggleCrawlSub(s) {
+  if (selectedCrawlSubs.has(s)) selectedCrawlSubs.delete(s);
+  else selectedCrawlSubs.add(s);
+  renderCrawlSubredditPicker();
+}
+
+async function startCrawl() {
+  const subs = [...selectedCrawlSubs];
+  if (!subs.length) { toast('Select at least one subreddit to crawl'); return; }
+  const maxPages = +document.getElementById('crawlMaxPages').value;
+  document.getElementById('crawlStartBtn').style.display = 'none';
+  document.getElementById('crawlStopBtn').style.display = 'inline-flex';
+  document.getElementById('crawlIdle').style.display = 'none';
+  document.getElementById('crawlProgress').style.display = 'block';
+  document.getElementById('crawlLog').innerHTML = `<div style="color:var(--green)">▶ Starting crawl of ${subs.length} subreddit(s) — ${maxPages} pages each (~${subs.length * maxPages * 100} posts max)</div>`;
+  await api('/api/crawl/start', 'POST', { subreddits: subs, maxPages });
+  crawlPollInterval = setInterval(loadCrawlStatus, 2000);
+}
+
+async function stopCrawl() {
+  await api('/api/crawl/stop', 'POST');
+  toast('Stop signal sent — finishing current page...');
+}
+
+async function loadCrawlStatus() {
+  const res = await api('/api/crawl/status');
+  if (!res.ok) return;
+  const data = await res.json();
+  if (!data || data.status === 'idle') return;
+  renderCrawlProgress(data);
+  if (data.status === 'complete' || data.status === 'stopped') {
+    clearInterval(crawlPollInterval);
+    crawlPollInterval = null;
+    document.getElementById('crawlStartBtn').style.display = 'inline-flex';
+    document.getElementById('crawlStopBtn').style.display = 'none';
+    await loadMatches(); // refresh flagged posts
+  }
+}
+
+function renderCrawlProgress(data) {
+  if (!data?.subreddits) return;
+  document.getElementById('crawlProgress').style.display = 'block';
+  document.getElementById('crawlIdle').style.display = 'none';
+
+  const t = data.totals || {};
+  const statusColor = data.status==='complete'?'var(--green)':data.status==='stopped'?'var(--yellow)':'var(--blue)';
+  const statusLabel = data.status==='running'?'🔄 Running':data.status==='complete'?'✓ Complete':data.status==='stopped'?'◼ Stopped':'—';
+
+  document.getElementById('crawlTotals').innerHTML = [
+    ['Status', statusLabel, statusColor],
+    ['Posts scanned', (t.postsScanned||0).toLocaleString(), 'var(--text)'],
+    ['New matches', t.newMatches||0, 'var(--green)'],
+    ['Brand mentions', t.brandMentions||0, 'var(--yellow)'],
+  ].map(([l,v,c]) => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:18px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${l}</div></div>`).join('');
+
+  document.getElementById('crawlSubredditRows').innerHTML = (data.subreddits||[]).map(s => {
+    const statusIcon = s.status==='done'?'✓':s.status==='scanning'?'⟳':s.status==='stopped'?'◼':'○';
+    const statusCol = s.status==='done'?'var(--green)':s.status==='scanning'?'var(--blue)':s.status==='stopped'?'var(--yellow)':'var(--muted)';
+    const pagesTotal = document.getElementById('crawlMaxPages')?.value || 10;
+    const pct = s.status==='done'?100:Math.round((s.pagesScanned/pagesTotal)*100);
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:12px;font-family:var(--mono);color:${statusCol};width:14px">${statusIcon}</span>
+        <span style="font-size:13px;font-weight:500;flex:1">r/${esc(s.name)}</span>
+        <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${s.pagesScanned} pages · ${(s.postsScanned||0).toLocaleString()} posts</span>
+        ${s.newMatches?`<span style="font-size:11px;font-family:var(--mono);color:var(--green)">${s.newMatches} matches</span>`:''}
+        ${s.brandMentions?`<span style="font-size:11px;font-family:var(--mono);color:var(--yellow)">${s.brandMentions} mentions</span>`:''}
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${statusCol};transition:width .5s ease;border-radius:2px"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update log with latest activity summary
+  const log = document.getElementById('crawlLog');
+  const scanning = data.subreddits.find(s => s.status === 'scanning');
+  if (scanning) {
+    const entry = document.createElement('div');
+    entry.textContent = `[${new Date().toLocaleTimeString()}] r/${scanning.name} — page ${scanning.pagesScanned}, ${scanning.postsScanned} posts scanned`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+  if (data.status === 'complete') {
+    const entry = document.createElement('div');
+    entry.style.color = 'var(--green)';
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ✓ Crawl complete — ${(t.postsScanned||0).toLocaleString()} posts, ${t.newMatches||0} new matches, ${t.brandMentions||0} brand mentions`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+  if (data.status === 'stopped') {
+    const entry = document.createElement('div');
+    entry.style.color = 'var(--yellow)';
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ◼ Crawl stopped`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
 }
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
