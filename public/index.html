@@ -357,7 +357,9 @@ function showApp(){document.getElementById('loginScreen').style.display='none';d
 function switchTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+tab).classList.add('active');
-  if(tab==='gaps')loadGaps();if(tab==='brands')loadBrandMentions();
+  if(tab==='gaps')loadGaps();
+  if(tab==='brands')loadBrandMentions();
+  if(tab==='archive')loadArchive();
 }
 
 let cfg={subreddits:[],keywords:[],themes:[],brandTerms:[],pollIntervalMinutes:15,minRelevanceScore:7,brandVoiceDescription:'',brandVoiceUrls:[],brandVoiceCache:null,brandVoiceCachedAt:null,sitePageUrls:[]};
@@ -515,6 +517,71 @@ async function loadMatches(){
   const res=await api('/api/matches');if(!res.ok)return;allMatches=await res.json();renderMatches();
   const pending=allMatches.filter(m=>!m.replied).length;
   const badge=document.getElementById('matchBadge');badge.style.display=pending>0?'inline':'none';badge.textContent=pending;
+}
+
+let archivedMatches=[];
+async function loadArchive(){
+  const res=await api('/api/matches/archived');if(!res.ok)return;
+  archivedMatches=await res.json();
+  renderArchive();
+  const badge=document.getElementById('archiveBadge');
+  badge.style.display=archivedMatches.length>0?'inline':'none';
+  badge.textContent=archivedMatches.length;
+}
+
+function renderArchive(){
+  const el=document.getElementById('archiveList');
+  if(!archivedMatches.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🗄</div><div class="empty-title">Archive is empty</div><div class="empty-desc">Replied and dismissed posts will appear here when you archive them from Flagged Posts.</div></div>';
+    return;
+  }
+  const replied=archivedMatches.filter(m=>m.archive_reason==='replied');
+  const dismissed=archivedMatches.filter(m=>m.archive_reason==='dismissed');
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px">
+      ${[['Total archived',archivedMatches.length,'var(--text)'],['Replied',replied.length,'var(--green)'],['Dismissed',dismissed.length,'var(--muted)']].map(([l,v,c])=>`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${l}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+    ${archivedMatches.map(m=>{
+      const score=m.evaluation?.score||0,sc=score>=8?'score-high':'score-mid';
+      const isReplied=m.archive_reason==='replied';
+      const themes=(m.evaluation?.matchedThemeIds||m.matched_themes||[]).map(id=>cfg.themes.find(t=>t.id===id)).filter(Boolean);
+      return `<div class="card" style="opacity:${isReplied?1:.75};border-color:${isReplied?'rgba(62,207,142,.2)':'var(--border)'}">
+        <div class="card-meta">
+          <span class="badge-sub">r/${esc(m.subreddit)}</span>
+          <span class="badge-score ${sc}">${score}/10</span>
+          ${themes.map(t=>`<span style="font-size:10px;font-family:var(--mono);color:${t.color};background:${t.color}1a;border:1px solid ${t.color}40;padding:1px 7px;border-radius:4px">${esc(t.name)}</span>`).join('')}
+          <span style="font-size:10px;font-family:var(--mono);color:${isReplied?'var(--green)':'var(--muted)'};background:${isReplied?'rgba(62,207,142,.1)':'var(--surface2)'};border:1px solid ${isReplied?'rgba(62,207,142,.25)':'var(--border)'};padding:2px 8px;border-radius:4px">${isReplied?'✓ Replied':'✕ Dismissed'}</span>
+          <span class="card-time">${esc(m.author||'')} · archived ${timeAgo(m.archived_at)}</span>
+        </div>
+        <div class="card-title">${esc(m.title)}</div>
+        <div class="card-summary">${esc(m.evaluation?.summary||'')}</div>
+        <div class="card-actions">
+          <a href="${esc(m.url)}" target="_blank" rel="noopener"><button class="btn btn-ghost">↗ View on Reddit</button></a>
+          <button class="btn btn-ghost" onclick="restoreMatch('${m.id}')">↑ Restore to active</button>
+          ${m.draft_reply?`<button class="btn btn-ghost" onclick="toggleArchivedDraft('${m.id}')">▸ View reply</button>`:''}
+        </div>
+        ${m.draft_reply?`<div id="adraft-${m.id}" style="display:none" class="draft"><div class="draft-label">Reply sent</div><div class="draft-body">${esc(m.draft_reply)}</div><div style="display:flex;gap:7px"><button class="btn btn-ghost" onclick="navigator.clipboard.writeText(${JSON.stringify(m.draft_reply)});toast('📋 Copied')">📋 Copy</button></div></div>`:''}
+      </div>`;
+    }).join('')}
+    </div>`;
+}
+
+function toggleArchivedDraft(id){
+  const el=document.getElementById('adraft-'+id);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function restoreMatch(id){
+  await api('/api/matches/'+id+'/restore','POST');
+  archivedMatches=archivedMatches.filter(m=>m.id!==id);
+  renderArchive();
+  await loadMatches();
+  toast('↑ Post restored to Flagged Posts');
 }
 function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderMatches();}
 function renderMatches(){
@@ -746,7 +813,14 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 function timeAgo(iso){if(!iso)return'';const m=Math.floor((Date.now()-new Date(iso))/60000);if(m<1)return'just now';if(m<60)return`${m}m ago`;const h=Math.floor(m/60);if(h<24)return`${h}h ago`;return`${Math.floor(h/24)}d ago`;}
 function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
 
-async function init(){await loadConfig();await loadMatches();await refreshStatus();setInterval(refreshStatus,10000);setInterval(loadMatches,20000);}
+async function init(){
+  await loadConfig();
+  await loadMatches();
+  await loadArchive();
+  await refreshStatus();
+  setInterval(refreshStatus,10000);
+  setInterval(loadMatches,20000);
+}
 if(sessionToken)checkAuth().then(ok=>{if(!ok){sessionToken=null;localStorage.removeItem('rm_token');}});
 </script>
 </body>
