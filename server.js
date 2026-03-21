@@ -411,12 +411,14 @@ async function runPoll() {
   const seenIds = await getSeenIds();
   let newPostsChecked = 0, newMatches = 0;
   const errors = [], newSeenIds = [];
+  const allFetchedPosts = []; // collect all posts for brand scan reuse
 
   console.log(`[${new Date().toLocaleTimeString()}] Polling ${config.subreddits.length} subreddit(s)...`);
 
   for (const subreddit of config.subreddits) {
     try {
       const posts = await fetchSubredditPosts(subreddit);
+      allFetchedPosts.push(...posts); // collect for brand scan
       for (const post of posts) {
         if (seenIds.has(post.id)) continue;
         newSeenIds.push(post.id);
@@ -445,7 +447,6 @@ async function runPoll() {
               current_comments: post.num_comments, reply_upvotes: null,
             });
             newMatches++;
-            console.log(`  ✓ r/${subreddit}: "${post.title.slice(0, 60)}" (${evaluation.overallScore}/10)`);
           }
         } catch (e) { console.error(`  Eval error ${post.id}:`, e.message); }
         await new Promise(r => setTimeout(r, 500));
@@ -468,8 +469,8 @@ async function runPoll() {
   // Auto content gap analysis
   if (newMatches > 0) {
     try {
-      const { data: allMatches } = await supabase.from('matches').select('title, subreddit, evaluation')
-        .neq('status', 'dismissed').order('matched_at', { ascending: false }).limit(60);
+      const { data: allMatches } = await supabase.from('matches').select('title, subreddit, selftext, evaluation')
+        .neq('status', 'dismissed').order('matched_at', { ascending: false }).limit(100);
       const existing = await supabase.from('config').select('value').eq('key', 'content_gaps').single();
       const existingGaps = existing?.data?.value?.gaps || [];
       const siteUrls = [...(config.brandVoiceUrls || []), ...(config.sitePageUrls || [])].filter(Boolean);
@@ -481,9 +482,9 @@ async function runPoll() {
     } catch (e) { console.error('Content gap analysis error:', e.message); }
   }
 
-  // Auto brand scan (runs every poll)
+  // Brand scan — pass already-fetched posts so we don't hit Reddit twice
   try {
-    await runBrandScan();
+    await runBrandScan(allFetchedPosts);
   } catch (e) { console.error('Brand scan error:', e.message); }
 }
 
@@ -493,43 +494,19 @@ function schedulePoll(mins) {
 }
 
 // ─── Brand monitor ────────────────────────────────────────────────────────────
-// Brand terms are stored in config (key: 'main', field: brandTerms)
-// Each entry: { term: string, type: 'own'|'competitor', color: string, active: boolean }
-// Default terms used only if none are configured yet
-const DEFAULT_BRAND_TERMS = [
-  { term: 'Green Coffee Collective', type: 'own',        color: '#ff4500', active: true },
-  { term: 'GCC',                     type: 'own',        color: '#ff4500', active: true },
-  { term: 'Small Batch Roasting',    type: 'competitor', color: '#4e9eff', active: true },
-  { term: 'Roast Rebels',            type: 'competitor', color: '#a78bfa', active: true },
-];
+// Crawls monitored subreddits directly rather than using Reddit's unreliable
+// search API. Every post fetched during a poll is checked for brand term mentions.
 
 async function getBrandTerms() {
   const config = await getConfig();
   const terms = config.brandTerms;
   if (terms?.length) return terms.filter(t => t.active !== false);
-  return DEFAULT_BRAND_TERMS;
+  return CONFIG_DEFAULTS.brandTerms;
 }
 
-async function searchRedditForTerm(term, limit = 10) {
-  const url = `https://www.reddit.com/search.json?q=${encodeURIComponent('"' + term + '"')}&sort=new&limit=${limit}&type=link`;
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': 'RedditMonitor/1.0' }, signal: AbortSignal.timeout(10000) });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data?.data?.children || []).map(c => ({
-      id: c.data.id,
-      title: c.data.title,
-      selftext: c.data.selftext || '',
-      author: c.data.author,
-      subreddit: c.data.subreddit,
-      url: `https://reddit.com${c.data.permalink}`,
-      score: c.data.score,
-      created_utc: c.data.created_utc,
-    }));
-  } catch (e) {
-    console.error(`Brand search failed for "${term}":`, e.message);
-    return [];
-  }
+function postMentionsBrand(post, term) {
+  const text = `${post.title} ${post.selftext || ''}`.toLowerCase();
+  return text.includes(term.toLowerCase());
 }
 
 async function analyseBrandMention(post, term, brandType) {
@@ -539,55 +516,82 @@ async function analyseBrandMention(post, term, brandType) {
 
 POST:
 Title: ${post.title}
-Body: ${post.selftext.slice(0, 800) || '(no body)'}
+Body: ${(post.selftext || '').slice(0, 800) || '(no body)'}
 Subreddit: r/${post.subreddit}
 
 {
-  "relevant": <true if the post genuinely mentions this brand in a coffee context, false if coincidental>,
+  "relevant": <true if the post genuinely discusses this brand or a competing product in a coffee context, false if coincidental>,
   "sentiment": "<'positive' | 'neutral' | 'negative' | 'comparison' | 'warm_lead'>",
-  "summary": "<one sentence summary of what's being said about the brand>",
-  "context": "<the specific sentence or phrase that mentions the brand, or null>",
+  "summary": "<one sentence summary of what is being said>",
+  "context": "<the specific sentence or phrase mentioning the brand, or null>",
   "warmLeadReason": "<if warm_lead or negative competitor: why this person might be open to alternatives, else null>"
 }
 
-Use 'warm_lead' when someone is unhappy with a competitor or actively shopping around for a new supplier.` }]
+Use warm_lead when someone is unhappy with a competitor or actively shopping around for a new supplier.` }]
   });
   return JSON.parse(res.content[0].text.trim());
 }
 
-async function runBrandScan() {
+async function runBrandScan(postsToScan = null) {
   const brandTerms = await getBrandTerms();
-  if (!brandTerms.length) { console.log('No brand terms configured — skipping brand scan.'); return null; }
+  if (!brandTerms.length) { console.log('[Brand scan] No active terms — skipping.'); return null; }
 
-  console.log(`Running brand scan for ${brandTerms.length} terms...`);
+  const config = await getConfig();
+  const subreddits = config.subreddits || [];
+  if (!subreddits.length) { console.log('[Brand scan] No subreddits configured — skipping.'); return null; }
 
-  // Load existing mentions so we can merge rather than overwrite
+  console.log(`[Brand scan] Scanning ${subreddits.length} subreddits for ${brandTerms.length} terms...`);
+
+  // Use posts passed in from the poll loop, or fetch fresh
+  let allPosts = postsToScan ? [...postsToScan] : [];
+  if (!allPosts.length) {
+    for (const subreddit of subreddits) {
+      try {
+        const posts = await fetchSubredditPosts(subreddit, 25);
+        allPosts.push(...posts);
+        console.log(`[Brand scan] Fetched ${posts.length} posts from r/${subreddit}`);
+        await new Promise(r => setTimeout(r, 500));
+      } catch (e) {
+        console.error(`[Brand scan] Fetch failed r/${subreddit}: ${e.message}`);
+      }
+    }
+  }
+
+  console.log(`[Brand scan] Checking ${allPosts.length} posts against ${brandTerms.length} brand terms`);
+
   const existing = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
   const existingMentions = existing?.data?.value?.mentions || [];
   const existingById = {};
   existingMentions.forEach(m => { existingById[m.id] = m; });
 
-  const freshIds = new Set();
+  const seenPostIds = new Set();
   const freshMentions = [];
-  const seenIds = new Set();
+  const preservedDismissed = existingMentions.filter(m => m.dismissed);
+  let newCount = 0;
 
   for (const brand of brandTerms) {
-    const posts = await searchRedditForTerm(brand.term);
-    for (const post of posts) {
-      if (seenIds.has(post.id)) continue;
-      seenIds.add(post.id);
-      const mentionId = `bm_${post.id}_${brand.term.replace(/\s/g,'_')}`;
-      freshIds.add(mentionId);
+    const matchingPosts = allPosts.filter(p => postMentionsBrand(p, brand.term));
+    console.log(`[Brand scan] "${brand.term}" — ${matchingPosts.length} matching posts`);
 
-      // If we already have this mention, keep it (preserving dismissed state etc.)
-      if (existingById[mentionId]) {
+    for (const post of matchingPosts) {
+      const postKey = post.id + brand.term;
+      if (seenPostIds.has(postKey)) continue;
+      seenPostIds.add(postKey);
+
+      const mentionId = `bm_${post.id}_${brand.term.replace(/\s/g,'_')}`;
+
+      if (existingById[mentionId] && !existingById[mentionId].dismissed) {
         freshMentions.push(existingById[mentionId]);
         continue;
       }
+      if (existingById[mentionId]?.dismissed) continue;
 
       try {
         const analysis = await analyseBrandMention(post, brand.term, brand.type);
-        if (!analysis.relevant) continue;
+        if (!analysis.relevant) {
+          console.log(`[Brand scan] ✗ Not relevant: "${post.title.slice(0,50)}"`);
+          continue;
+        }
         freshMentions.push({
           id: mentionId,
           brand: brand.term,
@@ -604,24 +608,46 @@ async function runBrandScan() {
           warmLeadReason: analysis.warmLeadReason,
           dismissed: false,
         });
-        await new Promise(r => setTimeout(r, 400));
+        newCount++;
+        console.log(`[Brand scan] ✓ "${post.title.slice(0,60)}" (${brand.term} · ${analysis.sentiment})`);
+        await new Promise(r => setTimeout(r, 300));
       } catch (e) {
-        console.error(`Brand analysis error for ${post.id}:`, e.message);
+        console.error(`[Brand scan] Analysis error: ${e.message}`);
       }
     }
-    await new Promise(r => setTimeout(r, 1000));
   }
 
-  // Also keep any existing dismissed mentions that didn't appear in this scan
-  // so the archive isn't wiped when a post drops off Reddit search results
-  const preservedDismissed = existingMentions.filter(m => m.dismissed && !freshIds.has(m.id));
-  const mergedMentions = [...freshMentions, ...preservedDismissed];
-
-  const result = { mentions: mergedMentions, scannedAt: new Date().toISOString(), termCount: brandTerms.length };
+  const allMentions = [...freshMentions, ...preservedDismissed];
+  const result = {
+    mentions: allMentions,
+    scannedAt: new Date().toISOString(),
+    termCount: brandTerms.length,
+    subredditsScanned: subreddits.length,
+    postsChecked: allPosts.length,
+  };
   await supabase.from('config').upsert({ key: 'brand_mentions', value: result }, { onConflict: 'key' });
-  console.log(`Brand scan complete — ${freshMentions.length} active mentions, ${preservedDismissed.length} archived preserved.`);
+  console.log(`[Brand scan] Done — ${newCount} new, ${freshMentions.length} total active, ${preservedDismissed.length} archived`);
   return result;
 }
+
+// Debug endpoint
+app.get('/api/brand-mentions/debug', requireAuth, async (req, res) => {
+  const config = await getConfig();
+  const brandTerms = (config.brandTerms || []).filter(t => t.active !== false);
+  if (!brandTerms.length) return res.json({ error: 'No active brand terms configured.' });
+  const subreddits = config.subreddits || [];
+  const samplePosts = [];
+  for (const sub of subreddits.slice(0, 3)) {
+    try { const posts = await fetchSubredditPosts(sub, 10); samplePosts.push(...posts); } catch (e) {}
+  }
+  const results = brandTerms.map(brand => ({
+    term: brand.term,
+    type: brand.type,
+    matchesInSample: samplePosts.filter(p => postMentionsBrand(p, brand.term)).length,
+    sampleMatches: samplePosts.filter(p => postMentionsBrand(p, brand.term)).slice(0,3).map(p => ({ title: p.title, subreddit: p.subreddit })),
+  }));
+  res.json({ subredditsChecked: subreddits.slice(0,3), postsInSample: samplePosts.length, results });
+});
 
 app.get('/api/brand-mentions', requireAuth, async (req, res) => {
   const { data } = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
@@ -766,6 +792,205 @@ app.post('/api/content-gaps/:gapId/status', requireAuth, async (req, res) => {
 
 app.get('/api/status', requireAuth, (req, res) => res.json({ isPolling, lastPollTime, lastPollStats }));
 app.post('/api/poll', requireAuth, (req, res) => { runPoll(); res.json({ ok: true }); });
+
+app.get('/api/status', requireAuth, (req, res) => res.json({ isPolling, lastPollTime, lastPollStats }));
+app.post('/api/poll', requireAuth, (req, res) => { runPoll(); res.json({ ok: true }); });
+
+// ─── Deep crawl ───────────────────────────────────────────────────────────────
+// Walks back through subreddit history page by page using Reddit's after param.
+// Rate-limited and stoppable. Progress is written to Supabase so the UI can poll it.
+
+let deepCrawlActive = false;
+let deepCrawlAbort = false;
+
+const CRAWL_DELAY_MS = 3000;   // 3s between pages — respectful to Reddit
+const CRAWL_PAGE_SIZE = 100;   // max Reddit allows
+const CRAWL_MAX_PAGES = 10;    // per subreddit — ~1000 posts, adjustable
+
+async function fetchSubredditPage(subreddit, after = null) {
+  let url = `https://www.reddit.com/r/${subreddit}/new.json?limit=${CRAWL_PAGE_SIZE}&raw_json=1`;
+  if (after) url += `&after=${after}`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'RedditMonitor/1.0 (greencoffeecollective.co.uk)' },
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return {
+    posts: (data.data.children || []).map(c => ({
+      id: c.data.id,
+      title: c.data.title,
+      selftext: c.data.selftext || '',
+      author: c.data.author,
+      subreddit: c.data.subreddit,
+      url: `https://reddit.com${c.data.permalink}`,
+      score: c.data.score,
+      num_comments: c.data.num_comments,
+      flair: c.data.link_flair_text || null,
+      created_utc: c.data.created_utc,
+    })),
+    after: data.data.after || null,
+  };
+}
+
+async function updateCrawlProgress(progress) {
+  await supabase.from('config').upsert({ key: 'crawl_progress', value: progress }, { onConflict: 'key' });
+}
+
+async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
+  if (deepCrawlActive) return { error: 'Crawl already running' };
+  deepCrawlActive = true;
+  deepCrawlAbort = false;
+
+  const config = await getConfig();
+  const themes = (config.themes || []).filter(t => t.active);
+  const brandTerms = await getBrandTerms();
+  const seenIds = await getSeenIds();
+  const newSeenIds = [];
+
+  const progress = {
+    status: 'running',
+    startedAt: new Date().toISOString(),
+    subreddits: subreddits.map(s => ({
+      name: s, status: 'pending',
+      pagesScanned: 0, postsScanned: 0,
+      newMatches: 0, brandMentions: 0,
+    })),
+    totals: { pagesScanned: 0, postsScanned: 0, newMatches: 0, brandMentions: 0 },
+    stoppedAt: null,
+  };
+  await updateCrawlProgress(progress);
+
+  const allCrawledPosts = [];
+
+  for (let si = 0; si < subreddits.length; si++) {
+    if (deepCrawlAbort) break;
+    const subreddit = subreddits[si];
+    progress.subreddits[si].status = 'scanning';
+    await updateCrawlProgress(progress);
+
+    let after = null;
+    let page = 0;
+
+    while (page < maxPages && !deepCrawlAbort) {
+      try {
+        console.log(`[Deep crawl] r/${subreddit} page ${page + 1}/${maxPages}${after ? ` after=${after}` : ''}`);
+        const { posts, after: nextAfter } = await fetchSubredditPage(subreddit, after);
+
+        if (!posts.length) { console.log(`[Deep crawl] r/${subreddit} no more posts`); break; }
+
+        allCrawledPosts.push(...posts);
+        progress.subreddits[si].pagesScanned++;
+        progress.subreddits[si].postsScanned += posts.length;
+        progress.totals.pagesScanned++;
+        progress.totals.postsScanned += posts.length;
+
+        // Intent matching on unseen posts
+        for (const post of posts) {
+          if (seenIds.has(post.id) || newSeenIds.includes(post.id)) continue;
+          newSeenIds.push(post.id);
+
+          if (!passesKeywordFilter(post, config.keywords) || !themes.length) continue;
+
+          try {
+            const evaluation = await evaluatePost(post, themes);
+            const matchedThemeIds = (evaluation.themeScores || [])
+              .filter(ts => ts.matches || ts.score >= 6)
+              .map(ts => themes.find(t => t.name === ts.themeId)?.id)
+              .filter(Boolean);
+            if (evaluation.overallScore >= (config.minRelevanceScore || 7) && matchedThemeIds.length > 0) {
+              await supabase.from('matches').insert({
+                post_id: post.id, subreddit: post.subreddit, title: post.title,
+                selftext: post.selftext, author: post.author, url: post.url,
+                flair: post.flair, created_utc: post.created_utc,
+                evaluation: { ...evaluation, matchedThemeIds },
+                matched_themes: matchedThemeIds,
+                matched_at: new Date().toISOString(),
+                status: 'active', replied: false, replied_at: null,
+                archived_at: null, archive_reason: null, draft_reply: null,
+                engagement: null, comments_at_reply: null,
+                current_comments: post.num_comments, reply_upvotes: null,
+              }).onConflict('post_id').ignore();
+              progress.subreddits[si].newMatches++;
+              progress.totals.newMatches++;
+              console.log(`[Deep crawl] ✓ Match: "${post.title.slice(0,60)}" (${evaluation.overallScore}/10)`);
+            }
+          } catch (e) { /* skip eval errors silently */ }
+        }
+
+        // Brand mention check on this page
+        for (const brand of brandTerms) {
+          const mentions = posts.filter(p => postMentionsBrand(p, brand.term) && !newSeenIds.includes(`bm_checked_${p.id}_${brand.term}`));
+          for (const post of mentions) {
+            newSeenIds.push(`bm_checked_${post.id}_${brand.term}`);
+            progress.subreddits[si].brandMentions++;
+            progress.totals.brandMentions++;
+          }
+        }
+
+        await updateCrawlProgress(progress);
+        after = nextAfter;
+        page++;
+
+        if (!after) { console.log(`[Deep crawl] r/${subreddit} reached end`); break; }
+
+        // Respectful delay between pages
+        await new Promise(r => setTimeout(r, CRAWL_DELAY_MS));
+
+      } catch (e) {
+        console.error(`[Deep crawl] Error on r/${subreddit} page ${page}: ${e.message}`);
+        // Back off and retry once if rate limited
+        if (e.message.includes('429') || e.message.includes('503')) {
+          console.log('[Deep crawl] Rate limited — waiting 30s...');
+          await new Promise(r => setTimeout(r, 30000));
+        } else {
+          break;
+        }
+      }
+    }
+
+    progress.subreddits[si].status = deepCrawlAbort ? 'stopped' : 'done';
+    await updateCrawlProgress(progress);
+  }
+
+  // Mark all newly seen posts
+  if (newSeenIds.filter(id => !id.startsWith('bm_')).length > 0) {
+    await markSeen(newSeenIds.filter(id => !id.startsWith('bm_')));
+  }
+
+  // Run brand scan over all crawled posts
+  if (allCrawledPosts.length > 0 && !deepCrawlAbort) {
+    console.log(`[Deep crawl] Running brand scan over ${allCrawledPosts.length} crawled posts...`);
+    try { await runBrandScan(allCrawledPosts); } catch (e) { console.error('[Deep crawl] Brand scan error:', e.message); }
+  }
+
+  progress.status = deepCrawlAbort ? 'stopped' : 'complete';
+  progress.stoppedAt = new Date().toISOString();
+  await updateCrawlProgress(progress);
+  deepCrawlActive = false;
+  console.log(`[Deep crawl] ${progress.status} — ${progress.totals.postsScanned} posts, ${progress.totals.newMatches} matches, ${progress.totals.brandMentions} brand mentions`);
+  return progress;
+}
+
+app.post('/api/crawl/start', requireAuth, async (req, res) => {
+  if (deepCrawlActive) return res.status(409).json({ error: 'Crawl already running' });
+  const config = await getConfig();
+  const { subreddits, maxPages } = req.body;
+  const targets = subreddits || config.subreddits;
+  if (!targets?.length) return res.status(400).json({ error: 'No subreddits specified' });
+  res.json({ ok: true, message: `Starting deep crawl of ${targets.length} subreddit(s)` });
+  runDeepCrawl(targets, maxPages || CRAWL_MAX_PAGES).catch(e => console.error('[Deep crawl] Fatal error:', e.message));
+});
+
+app.post('/api/crawl/stop', requireAuth, (req, res) => {
+  deepCrawlAbort = true;
+  res.json({ ok: true, message: 'Stop signal sent — crawl will finish current page and stop' });
+});
+
+app.get('/api/crawl/status', requireAuth, async (req, res) => {
+  const { data } = await supabase.from('config').select('value').eq('key', 'crawl_progress').single();
+  res.json(data?.value || { status: 'idle' });
+});
 
 // ─── Test poll — fetch one real post and evaluate it ─────────────────────────
 app.post('/api/test-poll', requireAuth, async (req, res) => {
