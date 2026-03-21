@@ -833,6 +833,32 @@ async function fetchSubredditPage(subreddit, after = null) {
   };
 }
 
+async function fetchSubredditPostCount(subreddit) {
+  // Reddit's about.json gives us subscriber count and approximate post counts
+  // subscribers is not post count, but posts_per_day × age gives an estimate
+  // More reliably: fetch the first page and use Reddit's dist (items per page) + their count field
+  try {
+    const url = `https://www.reddit.com/r/${subreddit}/about.json`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'RedditMonitor/1.0 (greencoffeecollective.co.uk)' },
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Reddit doesn't expose total post count publicly, but we can use
+    // the number of subscribers as a proxy for activity level,
+    // and cap our crawl target at maxPages * CRAWL_PAGE_SIZE
+    return {
+      subscribers: data.data?.subscribers || 0,
+      title: data.data?.title || subreddit,
+      // Estimate accessible posts: Reddit typically allows ~1000 posts back via API
+      accessiblePosts: 1000,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 async function updateCrawlProgress(progress) {
   await supabase.from('config').upsert({ key: 'crawl_progress', value: progress }, { onConflict: 'key' });
 }
@@ -848,13 +874,37 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
   const seenIds = await getSeenIds();
   const newSeenIds = [];
 
+  // Fetch real subreddit info upfront so progress bar reflects actual post counts
+  console.log('[Deep crawl] Fetching subreddit info...');
+  const subredditInfo = {};
+  for (const sub of subreddits) {
+    const info = await fetchSubredditPostCount(sub);
+    // Reddit API only allows ~1000 posts back. Our target is min(maxPages*100, 1000)
+    const targetPosts = Math.min(maxPages * CRAWL_PAGE_SIZE, 1000);
+    subredditInfo[sub] = {
+      subscribers: info?.subscribers || 0,
+      title: info?.title || sub,
+      targetPosts,
+      targetPages: Math.ceil(targetPosts / CRAWL_PAGE_SIZE),
+    };
+    console.log(`[Deep crawl] r/${sub}: ${(info?.subscribers||0).toLocaleString()} subscribers, targeting ${targetPosts} posts`);
+    await new Promise(r => setTimeout(r, 500));
+  }
+
   const progress = {
     status: 'running',
     startedAt: new Date().toISOString(),
     subreddits: subreddits.map(s => ({
-      name: s, status: 'pending',
-      pagesScanned: 0, postsScanned: 0,
-      newMatches: 0, brandMentions: 0,
+      name: s,
+      status: 'pending',
+      subscribers: subredditInfo[s]?.subscribers || 0,
+      targetPosts: subredditInfo[s]?.targetPosts || maxPages * CRAWL_PAGE_SIZE,
+      targetPages: subredditInfo[s]?.targetPages || maxPages,
+      pagesScanned: 0,
+      postsScanned: 0,
+      newMatches: 0,
+      brandMentions: 0,
+      lastAfter: null,
     })),
     totals: { pagesScanned: 0, postsScanned: 0, newMatches: 0, brandMentions: 0 },
     stoppedAt: null,
@@ -871,10 +921,11 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
 
     let after = null;
     let page = 0;
+    const targetPages = progress.subreddits[si].targetPages;
 
-    while (page < maxPages && !deepCrawlAbort) {
+    while (page < targetPages && !deepCrawlAbort) {
       try {
-        console.log(`[Deep crawl] r/${subreddit} page ${page + 1}/${maxPages}${after ? ` after=${after}` : ''}`);
+        console.log(`[Deep crawl] r/${subreddit} page ${page + 1}/${targetPages}${after ? ` after=${after}` : ''}`);
         const { posts, after: nextAfter } = await fetchSubredditPage(subreddit, after);
 
         if (!posts.length) { console.log(`[Deep crawl] r/${subreddit} no more posts`); break; }
@@ -886,9 +937,12 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
         progress.totals.postsScanned += posts.length;
 
         // Intent matching on unseen posts
+        const pageNewSeenIds = [];
         for (const post of posts) {
           if (seenIds.has(post.id) || newSeenIds.includes(post.id)) continue;
           newSeenIds.push(post.id);
+          pageNewSeenIds.push(post.id);
+          seenIds.add(post.id); // update in-memory set so next iteration is accurate
 
           if (!passesKeywordFilter(post, config.keywords) || !themes.length) continue;
 
@@ -918,6 +972,9 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
           } catch (e) { /* skip eval errors silently */ }
         }
 
+        // Flush seen IDs after every page so progress survives a stop/restart
+        if (pageNewSeenIds.length > 0) await markSeen(pageNewSeenIds);
+
         // Brand mention check on this page
         for (const brand of brandTerms) {
           const mentions = posts.filter(p => postMentionsBrand(p, brand.term) && !newSeenIds.includes(`bm_checked_${p.id}_${brand.term}`));
@@ -928,9 +985,10 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
           }
         }
 
-        await updateCrawlProgress(progress);
+        progress.subreddits[si].lastAfter = nextAfter; // save cursor for resume
         after = nextAfter;
         page++;
+        await updateCrawlProgress(progress); // save progress after every page
 
         if (!after) { console.log(`[Deep crawl] r/${subreddit} reached end`); break; }
 
@@ -951,11 +1009,6 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
 
     progress.subreddits[si].status = deepCrawlAbort ? 'stopped' : 'done';
     await updateCrawlProgress(progress);
-  }
-
-  // Mark all newly seen posts
-  if (newSeenIds.filter(id => !id.startsWith('bm_')).length > 0) {
-    await markSeen(newSeenIds.filter(id => !id.startsWith('bm_')));
   }
 
   // Run brand scan over all crawled posts
