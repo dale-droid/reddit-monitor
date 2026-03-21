@@ -183,6 +183,10 @@
             <button class="filter-btn" onclick="setFilter('replied',this)">Replied</button>
           </div>
         </div>
+        <div id="crawlActiveBanner" style="display:none;background:rgba(78,158,255,.08);border:1px solid rgba(78,158,255,.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:none;align-items:center;gap:10px">
+          <span style="animation:rotate .8s linear infinite;display:inline-block;font-size:14px">🔍</span>
+          <span style="font-size:12px;color:var(--blue)">Deep crawl is running — new posts are being added in real time. <button onclick="switchTab('crawl',document.querySelector('[onclick*=crawl]'))" style="background:none;border:none;color:var(--blue);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline;padding:0">View crawl progress →</button></span>
+        </div>
         <div class="matches" id="matchList"></div>
 
         <!-- Test poll -->
@@ -271,6 +275,10 @@
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:16px;overflow:hidden">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Activity log</div>
             <div id="crawlLog" style="padding:12px 14px;font-size:11px;font-family:var(--mono);color:var(--muted);max-height:200px;overflow-y:auto;line-height:1.8"></div>
+          </div>
+
+          <div style="margin-top:14px;background:rgba(62,207,142,.06);border:1px solid rgba(62,207,142,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6">
+            Results are surfaced in real time across the app — new intent matches appear in <strong style="color:var(--text)">Flagged Posts</strong>, brand mentions in <strong style="color:var(--text)">Brand Monitor</strong>, and content patterns feed into <strong style="color:var(--text)">Content Gaps</strong> when the crawl completes.
           </div>
         </div>
 
@@ -879,6 +887,7 @@ async function runTestPoll(){
 
 // ─── Deep crawl ───────────────────────────────────────────────────────────────
 let crawlPollInterval = null;
+let fastRefreshInterval = null;
 let selectedCrawlSubs = new Set();
 
 function initCrawlPanel() {
@@ -902,6 +911,22 @@ function toggleCrawlSub(s) {
   renderCrawlSubredditPicker();
 }
 
+function startFastRefresh() {
+  if (fastRefreshInterval) return;
+  fastRefreshInterval = setInterval(async () => {
+    await loadMatches();
+    await loadBrandMentions();
+  }, 5000);
+  const banner = document.getElementById('crawlActiveBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function stopFastRefresh() {
+  if (fastRefreshInterval) { clearInterval(fastRefreshInterval); fastRefreshInterval = null; }
+  const banner = document.getElementById('crawlActiveBanner');
+  if (banner) banner.style.display = 'none';
+}
+
 async function startCrawl() {
   const subs = [...selectedCrawlSubs];
   if (!subs.length) { toast('Select at least one subreddit to crawl'); return; }
@@ -910,9 +935,10 @@ async function startCrawl() {
   document.getElementById('crawlStopBtn').style.display = 'inline-flex';
   document.getElementById('crawlIdle').style.display = 'none';
   document.getElementById('crawlProgress').style.display = 'block';
-  document.getElementById('crawlLog').innerHTML = `<div style="color:var(--green)">▶ Starting crawl of ${subs.length} subreddit(s) — ${maxPages} pages each (~${subs.length * maxPages * 100} posts max)</div>`;
+  document.getElementById('crawlLog').innerHTML = '<div style="color:var(--blue)">⟳ Fetching subreddit info then starting crawl...</div>';
   await api('/api/crawl/start', 'POST', { subreddits: subs, maxPages });
-  crawlPollInterval = setInterval(loadCrawlStatus, 2000);
+  startFastRefresh();
+  crawlPollInterval = setInterval(loadCrawlStatus, 3000);
 }
 
 async function stopCrawl() {
@@ -927,11 +953,16 @@ async function loadCrawlStatus() {
   if (!data || data.status === 'idle') return;
   renderCrawlProgress(data);
   if (data.status === 'complete' || data.status === 'stopped') {
-    clearInterval(crawlPollInterval);
-    crawlPollInterval = null;
+    clearInterval(crawlPollInterval); crawlPollInterval = null;
+    stopFastRefresh();
     document.getElementById('crawlStartBtn').style.display = 'inline-flex';
     document.getElementById('crawlStopBtn').style.display = 'none';
-    await loadMatches(); // refresh flagged posts
+    await loadMatches();
+    await loadBrandMentions();
+    const msg = data.status === 'complete'
+      ? `✓ Crawl complete — ${(data.totals?.postsScanned||0).toLocaleString()} posts, ${data.totals?.newMatches||0} new matches, ${data.totals?.brandMentions||0} brand mentions`
+      : '◼ Crawl stopped';
+    toast(msg);
   }
 }
 
@@ -939,59 +970,57 @@ function renderCrawlProgress(data) {
   if (!data?.subreddits) return;
   document.getElementById('crawlProgress').style.display = 'block';
   document.getElementById('crawlIdle').style.display = 'none';
-
   const t = data.totals || {};
+  const isRunning = data.status === 'running';
   const statusColor = data.status==='complete'?'var(--green)':data.status==='stopped'?'var(--yellow)':'var(--blue)';
-  const statusLabel = data.status==='running'?'🔄 Running':data.status==='complete'?'✓ Complete':data.status==='stopped'?'◼ Stopped':'—';
-
+  const statusLabel = isRunning?'🔄 Running':data.status==='complete'?'✓ Complete':data.status==='stopped'?'◼ Stopped':'—';
   document.getElementById('crawlTotals').innerHTML = [
     ['Status', statusLabel, statusColor],
     ['Posts scanned', (t.postsScanned||0).toLocaleString(), 'var(--text)'],
     ['New matches', t.newMatches||0, 'var(--green)'],
     ['Brand mentions', t.brandMentions||0, 'var(--yellow)'],
   ].map(([l,v,c]) => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center"><div style="font-size:18px;font-weight:700;color:${c};font-family:var(--mono)">${v}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${l}</div></div>`).join('');
-
   document.getElementById('crawlSubredditRows').innerHTML = (data.subreddits||[]).map(s => {
-    const statusIcon = s.status==='done'?'✓':s.status==='scanning'?'⟳':s.status==='stopped'?'◼':'○';
-    const statusCol = s.status==='done'?'var(--green)':s.status==='scanning'?'var(--blue)':s.status==='stopped'?'var(--yellow)':'var(--muted)';
-    const pagesTotal = document.getElementById('crawlMaxPages')?.value || 10;
-    const pct = s.status==='done'?100:Math.round((s.pagesScanned/pagesTotal)*100);
+    const isDone = s.status==='done', isScanning = s.status==='scanning';
+    const statusIcon = isDone?'✓':isScanning?'⟳':s.status==='stopped'?'◼':'○';
+    const statusCol = isDone?'var(--green)':isScanning?'var(--blue)':s.status==='stopped'?'var(--yellow)':'var(--muted)';
+    const target = s.targetPosts || 1000;
+    const pct = isDone ? 100 : Math.min(99, Math.round(((s.postsScanned||0)/target)*100));
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <span style="font-size:12px;font-family:var(--mono);color:${statusCol};width:14px">${statusIcon}</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-family:var(--mono);color:${statusCol};width:16px">${statusIcon}</span>
         <span style="font-size:13px;font-weight:500;flex:1">r/${esc(s.name)}</span>
-        <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${s.pagesScanned} pages · ${(s.postsScanned||0).toLocaleString()} posts</span>
-        ${s.newMatches?`<span style="font-size:11px;font-family:var(--mono);color:var(--green)">${s.newMatches} matches</span>`:''}
-        ${s.brandMentions?`<span style="font-size:11px;font-family:var(--mono);color:var(--yellow)">${s.brandMentions} mentions</span>`:''}
+        ${s.subscribers?`<span style="font-size:10px;font-family:var(--mono);color:var(--muted)">${(s.subscribers).toLocaleString()} members</span>`:''}
+        <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${(s.postsScanned||0).toLocaleString()} / ${target.toLocaleString()} posts</span>
+        ${s.newMatches?`<span style="font-size:11px;font-family:var(--mono);color:var(--green);background:rgba(62,207,142,.1);padding:1px 8px;border-radius:10px">+${s.newMatches} matches</span>`:''}
+        ${s.brandMentions?`<span style="font-size:11px;font-family:var(--mono);color:var(--yellow);background:rgba(245,200,66,.1);padding:1px 8px;border-radius:10px">+${s.brandMentions} mentions</span>`:''}
       </div>
-      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${statusCol};transition:width .5s ease;border-radius:2px"></div>
+      <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${statusCol};transition:width 1s ease;border-radius:3px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-size:10px;font-family:var(--mono);color:var(--muted)">${s.pagesScanned||0} pages · Reddit API limit ~1,000 posts per subreddit</span>
+        <span style="font-size:10px;font-family:var(--mono);color:${statusCol}">${pct}%</span>
       </div>
     </div>`;
   }).join('');
-
-  // Update log with latest activity summary
   const log = document.getElementById('crawlLog');
-  const scanning = data.subreddits.find(s => s.status === 'scanning');
-  if (scanning) {
+  const scanning = data.subreddits.find(s => s.status==='scanning');
+  if (scanning && isRunning) {
     const entry = document.createElement('div');
-    entry.textContent = `[${new Date().toLocaleTimeString()}] r/${scanning.name} — page ${scanning.pagesScanned}, ${scanning.postsScanned} posts scanned`;
-    log.appendChild(entry);
-    log.scrollTop = log.scrollHeight;
+    const pct = Math.min(99, Math.round(((scanning.postsScanned||0)/(scanning.targetPosts||1000))*100));
+    entry.textContent = `[${new Date().toLocaleTimeString()}] r/${scanning.name} — ${(scanning.postsScanned||0).toLocaleString()} posts (${pct}%)${scanning.newMatches?' · '+scanning.newMatches+' matches':''}${scanning.brandMentions?' · '+scanning.brandMentions+' mentions':''}`;
+    log.appendChild(entry); log.scrollTop = log.scrollHeight;
   }
-  if (data.status === 'complete') {
-    const entry = document.createElement('div');
-    entry.style.color = 'var(--green)';
-    entry.textContent = `[${new Date().toLocaleTimeString()}] ✓ Crawl complete — ${(t.postsScanned||0).toLocaleString()} posts, ${t.newMatches||0} new matches, ${t.brandMentions||0} brand mentions`;
-    log.appendChild(entry);
-    log.scrollTop = log.scrollHeight;
+  if (data.status==='complete') {
+    const entry = document.createElement('div'); entry.style.color='var(--green)';
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ✓ Complete — ${(t.postsScanned||0).toLocaleString()} posts · ${t.newMatches||0} matches in Flagged Posts · ${t.brandMentions||0} mentions in Brand Monitor`;
+    log.appendChild(entry); log.scrollTop = log.scrollHeight;
   }
-  if (data.status === 'stopped') {
-    const entry = document.createElement('div');
-    entry.style.color = 'var(--yellow)';
-    entry.textContent = `[${new Date().toLocaleTimeString()}] ◼ Crawl stopped`;
-    log.appendChild(entry);
-    log.scrollTop = log.scrollHeight;
+  if (data.status==='stopped') {
+    const entry = document.createElement('div'); entry.style.color='var(--yellow)';
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ◼ Stopped at ${(t.postsScanned||0).toLocaleString()} posts`;
+    log.appendChild(entry); log.scrollTop = log.scrollHeight;
   }
 }
 
@@ -1004,6 +1033,15 @@ async function init(){
   await loadMatches();
   await loadArchive();
   await refreshStatus();
+  // Resume fast refresh if a crawl was already running before page load
+  const crawlRes = await api('/api/crawl/status');
+  if (crawlRes.ok) {
+    const crawlData = await crawlRes.json();
+    if (crawlData?.status === 'running') {
+      startFastRefresh();
+      crawlPollInterval = setInterval(loadCrawlStatus, 3000);
+    }
+  }
   setInterval(refreshStatus,10000);
   setInterval(loadMatches,20000);
 }
