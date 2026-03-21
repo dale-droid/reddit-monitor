@@ -975,14 +975,59 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
         // Flush seen IDs after every page so progress survives a stop/restart
         if (pageNewSeenIds.length > 0) await markSeen(pageNewSeenIds);
 
-        // Brand mention check on this page
+        // Brand mention check on this page — full analysis, not just counting
+        const existingBrandData = await supabase.from('config').select('value').eq('key', 'brand_mentions').single();
+        const existingMentions = existingBrandData?.data?.value?.mentions || [];
+        const existingById = {};
+        existingMentions.forEach(m => { existingById[m.id] = m; });
+        const newMentionsThisPage = [];
+
         for (const brand of brandTerms) {
-          const mentions = posts.filter(p => postMentionsBrand(p, brand.term) && !newSeenIds.includes(`bm_checked_${p.id}_${brand.term}`));
-          for (const post of mentions) {
-            newSeenIds.push(`bm_checked_${post.id}_${brand.term}`);
-            progress.subreddits[si].brandMentions++;
-            progress.totals.brandMentions++;
+          const matchingPosts = posts.filter(p => postMentionsBrand(p, brand.term));
+          for (const post of matchingPosts) {
+            const mentionId = `bm_${post.id}_${brand.term.replace(/\s/g,'_')}`;
+            if (existingById[mentionId]) continue; // already stored
+
+            try {
+              const analysis = await analyseBrandMention(post, brand.term, brand.type);
+              if (!analysis.relevant) continue;
+
+              const mention = {
+                id: mentionId,
+                brand: brand.term,
+                brandType: brand.type,
+                brandColor: brand.color || '#6b7080',
+                subreddit: post.subreddit,
+                title: post.title,
+                author: post.author,
+                url: post.url,
+                postedAt: new Date(post.created_utc * 1000).toISOString(),
+                sentiment: analysis.sentiment,
+                summary: analysis.summary,
+                context: analysis.context,
+                warmLeadReason: analysis.warmLeadReason,
+                dismissed: false,
+              };
+              newMentionsThisPage.push(mention);
+              existingById[mentionId] = mention; // prevent duplicates within this page
+              progress.subreddits[si].brandMentions++;
+              progress.totals.brandMentions++;
+              console.log(`[Deep crawl] 👁 Brand mention: "${post.title.slice(0,50)}" (${brand.term} · ${analysis.sentiment})`);
+              await new Promise(r => setTimeout(r, 300));
+            } catch (e) {
+              console.error(`[Deep crawl] Brand analysis error: ${e.message}`);
+            }
           }
+        }
+
+        // Save new brand mentions to Supabase immediately so they appear in Brand Monitor
+        if (newMentionsThisPage.length > 0) {
+          const allMentions = [...existingMentions.filter(m => !newMentionsThisPage.find(n => n.id === m.id)), ...newMentionsThisPage];
+          await supabase.from('config').upsert({
+            key: 'brand_mentions',
+            value: { mentions: allMentions, scannedAt: new Date().toISOString(), termCount: brandTerms.length }
+          }, { onConflict: 'key' });
+          console.log(`[Deep crawl] Saved ${newMentionsThisPage.length} new brand mentions to Brand Monitor`);
         }
 
         progress.subreddits[si].lastAfter = nextAfter; // save cursor for resume
@@ -1011,17 +1056,11 @@ async function runDeepCrawl(subreddits, maxPages = CRAWL_MAX_PAGES) {
     await updateCrawlProgress(progress);
   }
 
-  // Run brand scan over all crawled posts
-  if (allCrawledPosts.length > 0 && !deepCrawlAbort) {
-    console.log(`[Deep crawl] Running brand scan over ${allCrawledPosts.length} crawled posts...`);
-    try { await runBrandScan(allCrawledPosts); } catch (e) { console.error('[Deep crawl] Brand scan error:', e.message); }
-  }
-
   progress.status = deepCrawlAbort ? 'stopped' : 'complete';
   progress.stoppedAt = new Date().toISOString();
   await updateCrawlProgress(progress);
   deepCrawlActive = false;
-  console.log(`[Deep crawl] ${progress.status} — ${progress.totals.postsScanned} posts, ${progress.totals.newMatches} matches, ${progress.totals.brandMentions} brand mentions`);
+  console.log(`[Deep crawl] ${progress.status} — ${progress.totals.postsScanned} posts scanned, ${progress.totals.newMatches} new matches in Flagged Posts, ${progress.totals.brandMentions} brand mentions in Brand Monitor`);
   return progress;
 }
 
